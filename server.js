@@ -1,13 +1,14 @@
 // Forge Studio server: serves the pages, pairs phones (WebRTC signaling), relays the program feed to RTMP via FFmpeg.
 const http=require('http'),fs=require('fs'),path=require('path'),{spawn}=require('child_process'),{WebSocketServer}=require('ws');
 const PORT=process.env.PORT||3000, PASS=process.env.FORGE_PASSWORD||'', TRANSCODE=process.env.FORGE_TRANSCODE==='1';
-const pages={'/':'studio.html','/cam':'cam.html'};
+const pages={'/':['studio.html','text/html; charset=utf-8'],'/cam':['cam.html','text/html; charset=utf-8'],'/manifest.json':['manifest.json','application/manifest+json'],'/sw.js':['sw.js','text/javascript'],'/icon-192.png':['icon-192.png','image/png'],'/icon-512.png':['icon-512.png','image/png']};
 const server=http.createServer((req,res)=>{
-  if(req.url.split('?')[0]==='/ice'){res.writeHead(200,{'Content-Type':'application/json'});return res.end(process.env.FORGE_ICE_JSON||'[]')}
-  const f=pages[req.url.split('?')[0]];
+  const p=req.url.split('?')[0];
+  if(p==='/ice'){res.writeHead(200,{'Content-Type':'application/json'});return res.end(process.env.FORGE_ICE_JSON||'[]')}
+  const f=pages[p];
   if(!f){res.writeHead(404);return res.end('Not found')}
-  res.writeHead(200,{'Content-Type':'text/html; charset=utf-8'});
-  fs.createReadStream(path.join(__dirname,f)).pipe(res);
+  res.writeHead(200,{'Content-Type':f[1]});
+  fs.createReadStream(path.join(__dirname,f[0])).pipe(res);
 });
 const wss=new WebSocketServer({noServer:true});
 server.on('upgrade',(req,sock,head)=>{

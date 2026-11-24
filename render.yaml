@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: forge-studio
+    runtime: docker
+    plan: free
+    envVars:
+      - key: FORGE_PASSWORD
+        sync: false
+      - key: FORGE_ICE_JSON
+        sync: false

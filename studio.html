@@ -1,97 +1,250 @@
 <!DOCTYPE html><html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Forge Studio</title>
+<link rel="manifest" href="/manifest.json"><meta name="theme-color" content="#0d1012">
 <style>
-:root{--bg:#101416;--panel:#192024;--ink:#e8eef0;--mute:#8d9ca4;--line:#2b363c;--acc:#2fc4ae;--acc-ink:#04201b;--rec:#ff6a55;--pgm:#e5484d}
-@media(prefers-color-scheme:light){:root{--bg:#f2f4f5;--panel:#fff;--ink:#14191c;--mute:#5d6a72;--line:#d5dbde;--acc:#0b7d6e;--acc-ink:#fff;--rec:#c8321f}}
-*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.4 system-ui,-apple-system,sans-serif;padding:max(10px,env(safe-area-inset-top)) 10px 10px}
-h1{font-size:17px;margin:0}h2{font-size:13px;margin:0 0 8px;color:var(--mute);font-weight:600}
-.top{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px}
-.layout{display:grid;gap:10px}.side{display:grid;gap:10px;align-content:start}
-@media(orientation:landscape) and (min-width:700px){.layout{grid-template-columns:1.6fr 1fr;align-items:start}.mons{grid-template-columns:1fr 1fr}}
-.mons{display:grid;gap:10px}.mon canvas{width:100%;aspect-ratio:16/9;background:#000;border-radius:6px;display:block;border:2px solid var(--line)}
-.mon.pgm canvas{border-color:var(--pgm)}.mon.pv canvas{border-color:var(--acc)}
-.mon b{font-size:12px;color:var(--mute);font-weight:600;display:block;margin-bottom:4px}
-.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px}
-button,select,input{font:inherit;color:var(--ink);background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:8px 10px;min-height:40px}
-button{cursor:pointer}button.pri{background:var(--acc);color:var(--acc-ink);border-color:var(--acc);font-weight:600}
-button.live{background:var(--rec);color:#fff;border-color:var(--rec);font-weight:600}
-button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
-.row{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
-.tabs button[aria-pressed=true]{border-color:var(--acc);box-shadow:inset 0 0 0 1px var(--acc)}
-.tabs button.onair{background:var(--pgm);color:#fff;border-color:var(--pgm)}
-.src{display:flex;gap:6px;align-items:center;padding:6px 0;border-top:1px solid var(--line)}.src:first-child{border-top:0}
-.src span{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.dest{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px}.dest input{width:100%}.dest .u{grid-column:1/-1}
-#msg{color:var(--rec);min-height:20px;margin:6px 0 0;font-size:13px;word-break:break-word}
-#qr{display:none;text-align:center}#qr.on{display:block}#qr canvas,#qr img{background:#fff;padding:8px;border-radius:8px;max-width:100%}
+:root{--bg:#0d1012;--bar:#14191c;--panel:#181e22;--panel2:#1f272c;--ink:#e6edf0;--mute:#8696a0;--line:#2a343a;--acc:#2fc4ae;--acc-ink:#03201b;--live:#ff4d4f;--ok:#3ecf7a;--warn:#f5a524}
+@media(prefers-color-scheme:light){:root{--bg:#e9edef;--bar:#fff;--panel:#fff;--panel2:#eef2f4;--ink:#14191c;--mute:#5d6a72;--line:#d3dadd;--acc:#0b7d6e;--acc-ink:#fff;--live:#d92d30}}
+*{box-sizing:border-box}html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font:14px/1.35 system-ui,-apple-system,"Segoe UI",sans-serif;padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom)}
+svg{flex:none;display:block}
+button,select,input{font:inherit;color:var(--ink)}
+button{background:var(--panel2);border:1px solid var(--line);border-radius:7px;padding:0 10px;min-height:38px;display:inline-flex;align-items:center;gap:6px;cursor:pointer;justify-content:center}
+button.ic{padding:0;width:38px}button:hover{border-color:var(--mute)}
+button.pri{background:var(--acc);color:var(--acc-ink);border-color:var(--acc);font-weight:600}
+button.live{background:var(--live);border-color:var(--live);color:#fff;font-weight:600}
+button.on{background:var(--live);border-color:var(--live);color:#fff}
+button[disabled]{opacity:.45;cursor:default}
+select,input[type=text],input[type=password],input[type=number]{background:var(--panel2);border:1px solid var(--line);border-radius:7px;min-height:38px;padding:0 8px;min-width:0}
+:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+.top{display:flex;align-items:center;gap:10px;padding:8px 10px;background:var(--bar);border-bottom:1px solid var(--line);flex-wrap:wrap;position:sticky;top:0;z-index:5}
+.brand{font-weight:700;font-size:16px;letter-spacing:.2px;display:flex;align-items:center;gap:8px}
+.brand i{width:12px;height:12px;border-radius:3px;background:var(--acc);display:block}
+.pills{display:flex;gap:6px;flex:1;flex-wrap:wrap}
+.pill{background:var(--panel2);border:1px solid var(--line);border-radius:20px;padding:3px 10px;font-size:12px;color:var(--mute);font-variant-numeric:tabular-nums;white-space:nowrap}
+.pill.live{background:var(--live);border-color:var(--live);color:#fff}.pill.bad{color:var(--warn);border-color:var(--warn)}
+.acts{display:flex;gap:6px}
+.app{display:grid;gap:10px;padding:10px}
+.monitors{display:grid;gap:8px;align-content:start}
+.mon{background:var(--panel);border:1px solid var(--line);border-radius:10px;overflow:hidden;position:relative}
+.mon.pgm{border-color:var(--live)}.mon.pv{border-color:var(--acc)}
+.mh{display:flex;justify-content:space-between;align-items:center;padding:4px 8px;font-size:12px;color:var(--mute);min-height:30px}
+.mh button{min-height:26px;width:30px;border:0;background:none}
+#pv{touch-action:none;cursor:move}canvas{width:100%;aspect-ratio:16/9;display:block;background:#000}
+.badge{position:absolute;top:34px;left:8px;background:var(--live);color:#fff;font-size:11px;font-weight:700;padding:2px 8px;border-radius:4px}
+.ov{position:absolute;inset:30px 0 0 0;display:grid;place-content:center;justify-items:center;gap:10px;text-align:center;background:rgba(0,0,0,.55);color:#fff;padding:12px}
+.ov[hidden]{display:none}.ov p{margin:0;max-width:30ch;color:#cdd8dc}
+.xbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:8px}
+.xbar label{display:flex;align-items:center;gap:6px;color:var(--mute);font-size:13px}.xbar input[type=number]{width:74px}
+.dtabs{display:flex;gap:6px;overflow-x:auto}.dtabs button{flex:1;min-width:84px}.dtabs button[aria-pressed=true]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.docks{display:grid;gap:10px}
+.dock{display:none;background:var(--panel);border:1px solid var(--line);border-radius:10px;min-width:0}.dock.active{display:block}
+.dh{display:flex;align-items:center;gap:4px;padding:6px 8px;border-bottom:1px solid var(--line)}.dh b{flex:1;font-size:13px}
+.dh button{min-height:32px;width:32px;padding:0}
+.dbody{padding:6px;display:grid;gap:4px;max-height:340px;overflow:auto}
+.row{display:flex;align-items:center;gap:6px;padding:4px 6px;border-radius:7px;border:1px solid transparent;min-height:40px}
+.row.sel{background:var(--panel2);border-color:var(--acc)}.row .nm{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer;min-height:30px;display:flex;align-items:center}
+.row button{min-height:32px;width:32px;padding:0;border:0;background:none}
+.tag{font-size:10px;font-weight:700;padding:1px 6px;border-radius:4px;color:#fff}.tag.p{background:var(--live)}.tag.v{background:var(--acc);color:var(--acc-ink)}
+.props{display:flex;gap:6px;flex-wrap:wrap;padding:2px 6px 8px 44px}.props select{flex:1;min-width:110px}.sl{display:flex;align-items:center;gap:8px;flex:1 1 100%;color:var(--mute);font-size:12px}.sl span{width:34px}.sl input{flex:1}
+.menu{display:grid;gap:6px;padding:8px;background:var(--panel2);border-radius:8px;margin:0 0 4px}.menu[hidden]{display:none}
+.menu .opts{display:flex;gap:6px}.menu .opts select{flex:1}
+.menu button{justify-content:flex-start}
+.mix{display:grid;grid-template-columns:30px 1fr;gap:2px 8px;align-items:center;padding:6px}
+.mix .lab{grid-column:1/-1;font-size:12px;color:var(--mute);display:flex;justify-content:space-between}
+.meter{height:8px;background:var(--panel2);border-radius:4px;overflow:hidden;grid-column:2}.meter i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--ok) 70%,var(--warn) 85%,var(--live))}
+.mix input[type=range]{grid-column:2;width:100%}.mix button{grid-row:2/4;grid-column:1;width:30px;min-height:30px;padding:0}
+.dest{display:grid;grid-template-columns:1fr auto;gap:6px;padding:6px;background:var(--panel2);border-radius:8px}.dest select,.dest input{width:100%}.dest .full{grid-column:1/-1}
+.small{color:var(--mute);font-size:12px;margin:0;padding:2px 6px}
+#msg{color:var(--warn);font-size:13px;min-height:18px;margin:0;padding:0 4px;word-break:break-word}
+dialog{background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:12px;max-width:340px;text-align:center}
+dialog::backdrop{background:rgba(0,0,0,.6)}#qrbox{display:inline-block;background:#fff;padding:10px;border-radius:8px}
 #qrlink{font-size:12px;color:var(--mute);word-break:break-all}
-a{color:var(--acc)}.empty{color:var(--mute);margin:2px 0}
+a{color:var(--acc)}
+@media(orientation:landscape) and (max-width:1099px) and (min-width:560px){
+ .app{grid-template-columns:1.5fr 1fr;align-items:start}.monitors{grid-template-columns:1fr 1fr}.monitors .xbar,#msg{grid-column:1/-1}
+ .dtabs{grid-column:2}.docks{grid-column:2}.app>.monitors{grid-row:1/3}.dbody{max-height:46vh}}
+@media(min-width:1100px){
+ .monitors{grid-template-columns:1fr 1fr}.monitors .xbar,#msg{grid-column:1/-1}
+ .dtabs{display:none}.docks{grid-template-columns:repeat(4,1fr)}.dock{display:block}}
+body.nostudio #pvMon{display:none}body.nostudio .monitors{grid-template-columns:1fr}
 </style></head><body>
-<div class="top"><h1>Forge Studio</h1>
-  <div class="row"><button id="rec">Record to device</button><button id="liveBtn" class="live">Go live</button><span id="clock" style="color:var(--mute)"></span></div></div>
-<div class="layout">
- <div>
-  <div class="mons">
-   <div class="mon pv"><b>Preview</b><canvas id="pv" width="1280" height="720"></canvas></div>
-   <div class="mon pgm"><b>Program (what you stream and record)</b><canvas id="pg" width="1280" height="720"></canvas></div>
-  </div>
-  <div class="row" style="margin-top:8px"><button class="pri" id="take">Take preview to program</button>
-   <label class="row"><input type="checkbox" id="mic"> Microphone</label></div>
+<header class="top">
+ <div class="brand"><i></i>Forge Studio</div>
+ <div class="pills"><span class="pill live" id="pLive" hidden>LIVE <span id="tLive">00:00</span></span><span class="pill live" id="pRec" hidden>REC <span id="tRec">00:00</span></span><span class="pill" id="pFps">0 fps</span><span class="pill" id="pBit">0 kb/s</span><span class="pill bad" id="pNet" hidden>Network slow</span></div>
+ <div class="acts"><button id="install" hidden>Install app</button><button id="rec"><span data-ic="rec"></span>Record</button><button id="liveBtn" class="live"><span data-ic="signal"></span><span id="liveTxt">Go live</span></button></div>
+</header>
+<div class="app">
+ <section class="monitors">
+  <div class="mon pv" id="pvMon"><div class="mh"><span>Preview</span></div><canvas id="pv" width="1280" height="720"></canvas></div>
+  <div class="mon pgm" id="pgMon"><div class="mh"><span>Program (streamed and recorded)</span><button id="fs" class="ic" aria-label="Full screen" data-ic="expand"></button></div><canvas id="pg" width="1280" height="720"></canvas>
+   <span class="badge" id="onair" hidden>ON AIR</span>
+   <div class="ov" id="empty"><b>Nothing on screen yet</b><p>No other phone? Use this device's camera to try the studio.</p><button class="pri" id="useCam"><span data-ic="cam"></span>Use this device's camera</button></div></div>
+  <div class="xbar"><button class="pri" id="take"><span data-ic="arrow"></span>Take to program</button>
+   <label>Transition <select id="tType"><option value="cut">Cut</option><option value="fade">Fade</option></select></label>
+   <label>ms <input type="number" id="tMs" value="500" min="100" max="3000" step="100"></label>
+   <label><input type="checkbox" id="studioMode" checked> Studio mode</label></div>
   <p id="msg" role="status"></p>
- </div>
- <div class="side">
-  <div class="card"><h2>Scenes (tap to preview, green = on air)</h2><div class="row tabs" id="tabs"></div><div class="row" style="margin-top:6px"><button id="addScene">New scene</button></div></div>
-  <div class="card"><h2>Sources in preview scene</h2><div id="srcs"></div>
-   <div class="row" style="margin-top:8px"><button id="addPhone" class="pri">Add phone (QR)</button><button id="addCam">Camera</button><button id="addScr">Screen</button><button id="addImg">Image</button><button id="addTxt">Text</button>
-   <select id="face"><option value="user">Front</option><option value="environment">Back</option></select></div>
-   <input type="file" id="file" accept="image/*" hidden>
-   <div id="qr" class="card" style="margin-top:8px"><div id="qrbox"></div><p>Scan with the other phone's camera app.</p><div id="qrlink"></div></div></div>
-  <div class="card"><h2>Stream destinations (multi-stream)</h2><div id="dests"></div>
-   <div class="row"><button id="addDest">Add destination</button></div>
-   <div class="row" style="margin-top:8px"><input id="key" type="password" placeholder="Server password (if set)" autocomplete="off" style="flex:1"></div></div>
-  <div class="card"><h2>Local recordings</h2><div id="recs"><p class="empty">Recordings appear here to save.</p></div></div>
- </div>
+ </section>
+ <nav class="dtabs" id="dtabs"><button data-d="scenes" aria-pressed="true">Scenes</button><button data-d="sources" aria-pressed="false">Sources</button><button data-d="audio" aria-pressed="false">Audio</button><button data-d="stream" aria-pressed="false">Stream</button></nav>
+ <section class="docks">
+  <div class="dock active" data-d="scenes"><div class="dh"><b>Scenes</b><button id="sAdd" aria-label="Add scene" data-ic="plus"></button><button id="sDup" aria-label="Duplicate scene" data-ic="copy"></button><button id="sRen" aria-label="Rename scene" data-ic="pencil"></button><button id="sDel" aria-label="Delete scene" data-ic="trash"></button></div><div class="dbody" id="scenesList"></div></div>
+  <div class="dock" data-d="sources"><div class="dh"><b>Sources</b><button id="xAdd" aria-label="Add source" data-ic="plus"></button><button id="xUp" aria-label="Move up" data-ic="up"></button><button id="xDown" aria-label="Move down" data-ic="down"></button><button id="xDel" aria-label="Remove source" data-ic="trash"></button></div>
+   <div class="dbody"><div class="menu" id="addMenu" hidden>
+    <div class="opts"><select id="face" aria-label="Camera"><option value="user">Front camera</option><option value="environment">Back camera</option></select><select id="res" aria-label="Resolution"><option value="720">720p</option><option value="1080">1080p</option></select></div>
+    <button id="addCam"><span data-ic="cam"></span>Device camera</button><button id="addPhone"><span data-ic="phone"></span>Phone camera (QR)</button><button id="addScr"><span data-ic="screen"></span>Screen capture</button><button id="addImg"><span data-ic="image"></span>Image</button><button id="addTxt"><span data-ic="text"></span>Text</button></div>
+    <div id="srcList"></div></div></div>
+  <div class="dock" data-d="audio"><div class="dh"><b>Audio mixer</b></div><div class="dbody" id="mixer"></div></div>
+  <div class="dock" data-d="stream"><div class="dh"><b>Stream and record</b><button id="addDest" aria-label="Add destination" data-ic="plus"></button></div><div class="dbody"><div id="dests" style="display:grid;gap:6px"></div>
+   <input type="password" id="key" placeholder="Server password (if set)" autocomplete="off">
+   <p class="small">Stream to several platforms at once by adding destinations. Recordings save to this device.</p><div id="recs"></div></div></div>
+ </section>
 </div>
+<input type="file" id="file" accept="image/*" hidden>
+<dialog id="qrd"><p><b>Add a phone camera</b></p><div id="qrbox"></div><p>Scan with the other phone's camera.</p><div id="qrlink"></div><p><button id="qrc">Close</button></p></dialog>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script>
 const $=i=>document.getElementById(i),WS=location.origin.replace(/^http/,'ws');
+const P={plus:'M12 5v14M5 12h14',trash:'M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14M10 11v6M14 11v6',eye:'M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12zM12 9a3 3 0 100 6 3 3 0 000-6z',eyeoff:'M3 3l18 18M10.6 6.2A9.6 9.6 0 0112 6c6 0 10 6 10 6a17 17 0 01-3.2 3.8M6.5 6.6A17 17 0 002 12s4 7 10 7c1.7 0 3.2-.4 4.5-1M9.9 9.9a3 3 0 004.2 4.2',pencil:'M4 20h4L19 9l-4-4L4 16v4zM13.5 6.5l4 4',copy:'M9 9h11v11H9zM5 15V4h11',up:'M12 19V5M6 11l6-6 6 6',down:'M12 5v14M6 13l6 6 6-6',cam:'M3 7h4l2-2h6l2 2h4v12H3zM12 10a3.5 3.5 0 100 7 3.5 3.5 0 000-7z',phone:'M8 2h8a1 1 0 011 1v18a1 1 0 01-1 1H8a1 1 0 01-1-1V3a1 1 0 011-1zM11 18h2',screen:'M3 4h18v12H3zM8 20h8M12 16v4',image:'M3 4h18v16H3zM3 16l5-5 4 4 3-3 6 6',text:'M5 6V4h14v2M12 4v16M9 20h6',mic:'M12 3a3 3 0 013 3v6a3 3 0 01-6 0V6a3 3 0 013-3zM6 11a6 6 0 0012 0M12 17v4',micoff:'M3 3l18 18M9 9v3a3 3 0 005 2M15 10V6a3 3 0 00-5.5-1.7M6 11a6 6 0 009 5M12 17v4',expand:'M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5',arrow:'M5 12h14M13 6l6 6-6 6',rec:'M12 6a6 6 0 100 12 6 6 0 000-12z',signal:'M5 12a10 10 0 0114 0M8 15a6 6 0 018 0M12 19h.01'};
+const ic=(n,s=18)=>`<svg viewBox="0 0 24 24" width="${s}" height="${s}" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="${P[n]}"/></svg>`;
+document.querySelectorAll('[data-ic]').forEach(e=>e.insertAdjacentHTML('afterbegin',ic(e.dataset.ic)));
 const PRESETS={Twitch:'rtmp://live.twitch.tv/app',YouTube:'rtmp://a.rtmp.youtube.com/live2',Facebook:'rtmps://live-api-s.facebook.com:443/rtmp',Custom:''};
-const LAY={off:null,full:[0,0,1,1],pip:[.66,.62,.32,.34],left:[0,0,.5,1],right:[.5,0,.5,1]};
-let sources=[],scenes=[{name:'Scene 1',map:{}}],pre=0,prog=0,uid=1;
-const room=[...crypto.getRandomValues(new Uint8Array(12))].map(b=>b.toString(36).padStart(2,'0')).join('');
+const LAY={full:[0,0,1,1],'pip-br':[.66,.62,.32,.34],'pip-bl':[.02,.62,.32,.34],'pip-tr':[.66,.04,.32,.34],'pip-tl':[.02,.04,.32,.34],left:[0,0,.5,1],right:[.5,0,.5,1],top:[0,0,1,.5],bottom:[0,.5,1,.5]};
+const LAYN={full:'Full screen','pip-br':'Corner bottom right','pip-bl':'Corner bottom left','pip-tr':'Corner top right','pip-tl':'Corner top left',left:'Left half',right:'Right half',top:'Top half',bottom:'Bottom half'};
+const KIND={cam:'cam',phone:'phone',screen:'screen',img:'image',text:'text'};
+let sources=[],scenes=[{name:'Scene 1',map:{}}],pre=scenes[0],prog=scenes[0],sel=null,uid=1,studio=true,tr=null,sceneN=1;
 const msg=t=>$('msg').textContent=t||'';
 let ICE=[{urls:'stun:stun.l.google.com:19302'}];fetch('/ice').then(r=>r.json()).then(j=>{if(j.length)ICE=j}).catch(()=>{});
-let ac=null,adest=null,micSrc=null,micStream=null;
-function mixer(){if(!ac){ac=new(window.AudioContext||window.webkitAudioContext)();adest=ac.createMediaStreamDestination()}if(ac.state==='suspended')ac.resume();return ac}
-document.addEventListener('click',mixer);
 
-function render(){
-  $('tabs').innerHTML='';
-  scenes.forEach((s,i)=>{const b=document.createElement('button');b.textContent=s.name;b.setAttribute('aria-pressed',i===pre);if(i===prog)b.className='onair';b.onclick=()=>{pre=i;render()};$('tabs').append(b)});
-  const box=$('srcs');box.innerHTML=sources.length?'':'<p class="empty">No sources yet. Add a phone, camera, screen, image, or text.</p>';
-  sources.forEach(s=>{
-    const d=document.createElement('div');d.className='src';
-    const n=document.createElement('span');n.textContent=s.name;
-    const sel=document.createElement('select');sel.setAttribute('aria-label','Layout for '+s.name);
-    [['off','Hidden'],['full','Full'],['pip','Corner'],['left','Left'],['right','Right']].forEach(([v,l])=>sel.add(new Option(l,v)));
-    sel.value=scenes[pre].map[s.id]||'off';sel.onchange=()=>scenes[pre].map[s.id]=sel.value;
-    const x=document.createElement('button');x.textContent='Remove';x.onclick=()=>{if(s.stream)s.stream.getTracks().forEach(t=>t.stop());if(s.peer)s.peer.close();sources=sources.filter(q=>q!==s);render()};
-    d.append(n,sel);
-    if(s.gain){const l=document.createElement('label');l.className='row';const c=document.createElement('input');c.type='checkbox';c.checked=s.gain.gain.value>0;c.onchange=()=>s.gain.gain.value=c.checked?1:0;l.append(c,'Sound');d.append(l)}
-    d.append(x);box.append(d);
+// ---------- Audio
+let ac=null,adest=null,master=null,masterAn=null,mic=null,chans=[];const masterCh={an:null,bar:null};
+function mixer(){if(!ac){ac=new(window.AudioContext||window.webkitAudioContext)();adest=ac.createMediaStreamDestination();master=ac.createGain();masterAn=ac.createAnalyser();masterAn.fftSize=256;masterCh.an=masterAn;master.connect(adest);master.connect(masterAn)}if(ac.state==='suspended')ac.resume();return ac}
+document.addEventListener('click',mixer);
+function addChan(name,track,stream){
+  mixer();const g=ac.createGain(),an=ac.createAnalyser();an.fftSize=256;
+  const src=ac.createMediaStreamSource(new MediaStream([track]));src.connect(g);g.connect(an);g.connect(master);
+  const c={name,g,an,src,stream,vol:100,muted:false};chans.push(c);renderAudio();return c;
+}
+function dropChan(c){if(!c)return;try{c.src.disconnect();c.g.disconnect()}catch{}if(c.stream)c.stream.getTracks().forEach(t=>t.stop());chans=chans.filter(x=>x!==c);if(c===mic)mic=null;renderAudio()}
+const applyG=c=>c.g.gain.value=c.muted?0:c.vol/100;
+function renderAudio(){
+  const box=$('mixer');box.innerHTML='';
+  const mk=(c,label,isMaster)=>{
+    const d=document.createElement('div');d.className='mix';
+    const lab=document.createElement('div');lab.className='lab';lab.textContent=label;
+    const m=document.createElement('div');m.className='meter';m.innerHTML='<i></i>';c.bar=m.firstChild;
+    d.append(lab);
+    if(!isMaster){
+      const b=document.createElement('button');b.setAttribute('aria-label','Mute '+label);b.innerHTML=ic(c.muted?'micoff':'mic');b.className=c.muted?'on':'';b.onclick=()=>{c.muted=!c.muted;applyG(c);renderAudio()};
+      const r=document.createElement('input');r.type='range';r.min=0;r.max=100;r.value=c.vol;r.setAttribute('aria-label','Volume '+label);r.oninput=()=>{c.vol=+r.value;applyG(c)};
+      d.append(b,m,r);
+    }else d.append(document.createElement('span'),m);
+    box.append(d);
+  };
+  if(mic)mk(mic,'Mic / Aux');
+  else{const b=document.createElement('button');b.innerHTML=ic('mic')+'Enable microphone';b.onclick=enableMic;box.append(b)}
+  chans.filter(c=>c!==mic).forEach(c=>mk(c,c.name));
+  if(masterAn)mk(masterCh,'Master',true);
+}
+async function enableMic(){
+  try{const st=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true}});mic=addChan('Mic / Aux',st.getAudioTracks()[0],st);renderAudio()}
+  catch{msg('Microphone blocked. Allow it in browser settings.')}
+}
+const buf=new Uint8Array(128);
+function meters(){
+  chans.concat([masterCh]).forEach(c=>{if(!c.an||!c.bar)return;c.an.getByteTimeDomainData(buf);let p=0;for(const v of buf)p=Math.max(p,Math.abs(v-128));c.bar.style.width=Math.min(100,p/128*140)+'%'});
+}
+
+// ---------- Scenes and sources
+const item=(sc,s)=>sc.map[s.id];
+function addSource(s){
+  s.id=uid++;sources.push(s);
+  const used=Object.values(pre.map).some(i=>i.vis);
+  pre.map[s.id]={lay:used?'pip-br':'full',fit:'fill',vis:true};sel=s;renderAll();return s;
+}
+function removeSource(s){
+  if(!s)return;if(s.stream)s.stream.getTracks().forEach(t=>t.stop());if(s.peer)s.peer.close();dropChan(s.ch);
+  sources=sources.filter(q=>q!==s);scenes.forEach(sc=>delete sc.map[s.id]);if(sel===s)sel=sources[sources.length-1]||null;renderAll();
+}
+function renderScenes(){
+  const box=$('scenesList');box.innerHTML='';
+  scenes.forEach(sc=>{
+    const r=document.createElement('div');r.className='row'+(sc===pre?' sel':'');
+    const n=document.createElement('span');n.className='nm';n.textContent=sc.name;n.onclick=()=>selectScene(sc);
+    r.append(n);
+    if(sc===prog){const t=document.createElement('span');t.className='tag p';t.textContent='PGM';r.append(t)}
+    if(sc===pre&&studio){const t=document.createElement('span');t.className='tag v';t.textContent='PRV';r.append(t)}
+    box.append(r);
   });
 }
-function addSrc(s){s.id=uid++;sources.push(s);scenes[pre].map[s.id]='full';render();return s}
+function renderSources(){
+  const box=$('srcList');box.innerHTML=sources.length?'':'<p class="small">No sources. Tap + to add one.</p>';
+  [...sources].reverse().forEach(s=>{
+    const it=item(pre,s),r=document.createElement('div');r.className='row'+(s===sel?' sel':'');
+    const e=document.createElement('button');e.setAttribute('aria-label','Show or hide '+s.name);e.innerHTML=ic(it&&it.vis?'eye':'eyeoff');
+    e.onclick=()=>{if(!it)pre.map[s.id]={lay:'pip-br',fit:'fill',vis:true};else it.vis=!it.vis;renderSources()};
+    const k=document.createElement('span');k.innerHTML=ic(KIND[s.kind]||'cam',16);
+    const n=document.createElement('span');n.className='nm';n.textContent=s.name;n.onclick=()=>{sel=s;renderSources()};
+    r.append(e,k,n);box.append(r);
+    if(s===sel){
+      const p=document.createElement('div');p.className='props';
+      const l=document.createElement('select');l.setAttribute('aria-label','Layout');if(it&&it.lay==='custom')l.add(new Option('Custom','custom'));Object.entries(LAYN).forEach(([v,t])=>l.add(new Option(t,v)));l.value=it?it.lay:'full';
+      l.onchange=()=>{if(l.value==='custom')return;if(!pre.map[s.id])pre.map[s.id]={lay:l.value,fit:'fill',vis:true};else{delete pre.map[s.id].rect;pre.map[s.id].lay=l.value}renderSources()};
+      const f=document.createElement('select');f.setAttribute('aria-label','Fit');f.add(new Option('Fill (crop)','fill'));f.add(new Option('Fit (letterbox)','fit'));f.value=it?it.fit:'fill';
+      f.onchange=()=>{if(pre.map[s.id])pre.map[s.id].fit=f.value};
+      p.append(l,f);
+      if(it){
+        const sl=(lab,get,set,min,max)=>{const w=document.createElement('label');w.className='sl';const t=document.createElement('span');t.textContent=lab;const g=document.createElement('input');g.type='range';g.min=min;g.max=max;g.value=get();g.setAttribute('aria-label',lab);
+          g.oninput=()=>{if(!it.rect)it.rect=[...(LAY[it.lay]||LAY.full)];it.lay='custom';set(+g.value/100)};w.append(t,g);return w};
+        p.append(sl('Size',()=>Math.round(rectOf(it)[2]*100),v=>{const r=it.rect,k=v/r[2];r[2]=v;r[3]*=k},8,150),sl('X',()=>Math.round(rectOf(it)[0]*100),v=>it.rect[0]=v,-50,100),sl('Y',()=>Math.round(rectOf(it)[1]*100),v=>it.rect[1]=v,-50,100));
+      }
+      if(s.kind==='text'){const b=document.createElement('button');b.innerHTML=ic('pencil',16)+'Edit text';b.onclick=()=>{const t=prompt('Text',s.text);if(t){s.text=t;s.name='Text: '+t.slice(0,18);renderSources()}};p.append(b)}
+      box.append(p);
+    }
+  });
+}
+function renderAll(){renderScenes();renderSources();$('empty').hidden=sources.length>0;$('onair').hidden=!(live||rec)}
+function selectScene(sc){pre=sc;if(!studio)take();renderAll()}
+function take(){
+  if(pre===prog){renderAll();return}
+  const ms=+$('tMs').value||500;
+  if($('tType').value==='fade')tr={from:prog,t0:performance.now(),ms};
+  prog=pre;renderAll();
+}
+$('take').onclick=take;
+$('studioMode').onchange=e=>{studio=e.target.checked;document.body.classList.toggle('nostudio',!studio);$('take').disabled=!studio;if(!studio){pre=prog}renderAll()};
+$('sAdd').onclick=()=>{scenes.push({name:'Scene '+(++sceneN),map:{}});selectScene(scenes[scenes.length-1])};
+$('sDup').onclick=()=>{scenes.push({name:pre.name+' copy',map:JSON.parse(JSON.stringify(pre.map))});selectScene(scenes[scenes.length-1])};
+$('sRen').onclick=()=>{const t=prompt('Scene name',pre.name);if(t){pre.name=t;renderScenes()}};
+$('sDel').onclick=()=>{
+  if(scenes.length<2)return msg('You need at least one scene.');
+  if(!confirm('Delete "'+pre.name+'"?'))return;
+  const i=scenes.indexOf(pre);scenes.splice(i,1);const nx=scenes[Math.max(0,i-1)];
+  if(prog===pre){prog=nx;tr=null}pre=nx;renderAll();
+};
+$('xAdd').onclick=()=>{$('addMenu').hidden=!$('addMenu').hidden};
+$('xDel').onclick=()=>removeSource(sel);
+$('xUp').onclick=()=>{const i=sources.indexOf(sel);if(i>=0&&i<sources.length-1){[sources[i],sources[i+1]]=[sources[i+1],sources[i]];renderSources()}};
+$('xDown').onclick=()=>{const i=sources.indexOf(sel);if(i>0){[sources[i],sources[i-1]]=[sources[i-1],sources[i]];renderSources()}};
+document.querySelectorAll('#dtabs button').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('#dtabs button').forEach(x=>x.setAttribute('aria-pressed',x===b));
+  document.querySelectorAll('.dock').forEach(d=>d.classList.toggle('active',d.dataset.d===b.dataset.d));
+});
 const vid=st=>{const v=document.createElement('video');v.muted=true;v.playsInline=true;v.autoplay=true;if(st)v.srcObject=st;v.play().catch(()=>{});return v};
-$('take').onclick=()=>{prog=pre;render()};
-$('addScene').onclick=()=>{scenes.push({name:'Scene '+(scenes.length+1),map:{}});pre=scenes.length-1;render()};
-$('addCam').onclick=async()=>{msg();try{const st=await navigator.mediaDevices.getUserMedia({video:{facingMode:$('face').value,width:{ideal:1920},height:{ideal:1080}}});addSrc({name:'This phone camera',kind:'video',el:vid(st),stream:st})}catch{msg('Camera blocked. Allow camera access and try again.')}};
-$('addScr').onclick=async()=>{msg();try{const st=await navigator.mediaDevices.getDisplayMedia({video:true});addSrc({name:'Screen',kind:'video',el:vid(st),stream:st})}catch{msg('Screen capture is not available in this browser (not on iPhone).')}};
+async function addDeviceCam(){
+  msg();const h=+$('res').value;
+  try{const st=await navigator.mediaDevices.getUserMedia({video:{facingMode:$('face').value,width:{ideal:h*16/9},height:{ideal:h}},audio:false});
+    addSource({name:'This device camera',kind:'cam',el:vid(st),stream:st});$('addMenu').hidden=true}
+  catch{msg('Camera blocked or not found. Allow camera access in your browser settings.')}
+}
+$('addCam').onclick=addDeviceCam;$('useCam').onclick=addDeviceCam;
+$('addScr').onclick=async()=>{msg();try{const st=await navigator.mediaDevices.getDisplayMedia({video:true});addSource({name:'Screen capture',kind:'screen',el:vid(st),stream:st});$('addMenu').hidden=true}catch{msg('Screen capture is not available in this browser (not on iPhone).')}};
 $('addImg').onclick=()=>$('file').click();
-$('file').onchange=e=>{const f=e.target.files[0];if(!f)return;const im=new Image();im.onload=()=>addSrc({name:f.name,kind:'img',el:im});im.src=URL.createObjectURL(f);e.target.value=''};
-$('addTxt').onclick=()=>{const t=prompt('Text to show on screen');if(t)addSrc({name:'Text: '+t.slice(0,18),kind:'text',text:t})};
+$('file').onchange=e=>{const f=e.target.files[0];if(!f)return;const im=new Image();im.onload=()=>{addSource({name:f.name,kind:'img',el:im});$('addMenu').hidden=true};im.src=URL.createObjectURL(f);e.target.value=''};
+$('addTxt').onclick=()=>{const t=prompt('Text to show on screen');if(t){addSource({name:'Text: '+t.slice(0,18),kind:'text',text:t});$('addMenu').hidden=true}};
+$('fs').onclick=()=>{const m=$('pgMon');(m.requestFullscreen||m.webkitRequestFullscreen||(()=>{})).call(m)};
 
-// Phone pairing
+// ---------- Phone pairing
+const room=[...crypto.getRandomValues(new Uint8Array(12))].map(b=>b.toString(36).padStart(2,'0')).join('');
 let sig=null;const peers={},phones={};
 function connectSig(){
   if(sig&&sig.readyState<2)return;
@@ -99,90 +252,116 @@ function connectSig(){
   sig.onmessage=async e=>{
     const o=JSON.parse(e.data),tx=m=>sig.send(JSON.stringify({to:o.from,...m}));
     if(o.type==='error')msg(o.text);
-    else if(o.type==='joined'){phones[o.from]=addSrc({name:'Phone '+o.from,kind:'video',el:vid()});$('qr').classList.remove('on')}
+    else if(o.type==='joined'){phones[o.from]=addSource({name:'Phone '+o.from,kind:'phone',el:vid()});if($('qrd').open)$('qrd').close()}
     else if(o.type==='offer'){
-      const pc=new RTCPeerConnection({iceServers:ICE});peers[o.from]=pc;
-      if(phones[o.from])phones[o.from].peer=pc;
+      const pc=new RTCPeerConnection({iceServers:ICE});peers[o.from]=pc;if(phones[o.from])phones[o.from].peer=pc;
       pc.ontrack=ev=>{const s=phones[o.from],el=s.el;
         if(el.srcObject!==ev.streams[0]){el.srcObject=ev.streams[0];el.play().catch(()=>{})}
-        if(ev.track.kind==='audio'){const m=mixer(),g=m.createGain();m.createMediaStreamSource(new MediaStream([ev.track])).connect(g);g.connect(adest);s.gain=g;render()}};
+        if(ev.track.kind==='audio')s.ch=addChan(s.name,ev.track,null)};
       pc.onicecandidate=ev=>ev.candidate&&tx({type:'ice',data:ev.candidate});
       pc.ready=pc.setRemoteDescription(o.data);await pc.ready;
       const a=await pc.createAnswer();await pc.setLocalDescription(a);tx({type:'answer',data:a});
     }else if(o.type==='ice'){const pc=peers[o.from];if(pc){await pc.ready;pc.addIceCandidate(o.data).catch(()=>{})}}
-    else if(o.type==='left'){const s=phones[o.from];if(s)s.name='Phone '+o.from+' (disconnected)';delete peers[o.from];render()}
+    else if(o.type==='left'){const s=phones[o.from];if(s){s.name='Phone '+o.from+' (offline)';dropChan(s.ch);s.ch=null}delete peers[o.from];renderSources()}
   };
   sig.onclose=()=>{sig=null};
 }
 $('addPhone').onclick=()=>{
   connectSig();const url=location.origin+'/cam?room='+room;
-  $('qrbox').innerHTML='';new QRCode($('qrbox'),{text:url,width:200,height:200});
-  $('qrlink').textContent=url;$('qr').classList.add('on');
+  $('qrbox').innerHTML='';new QRCode($('qrbox'),{text:url,width:200,height:200});$('qrlink').textContent=url;$('addMenu').hidden=true;$('qrd').showModal();
 };
+$('qrc').onclick=()=>$('qrd').close();
 
-// Compositor
-function drawScene(c,sc){
-  const W=1280,H=720;c.fillStyle='#000';c.fillRect(0,0,W,H);
+// ---------- Compositor
+function drawScene(c,sc,keep){
+  const W=1280,H=720;if(!keep){c.fillStyle='#000';c.fillRect(0,0,W,H)}
   sources.forEach(s=>{
-    const L=LAY[sc.map[s.id]||'off'];if(!L)return;const x=L[0]*W,y=L[1]*H,w=L[2]*W,h=L[3]*H;
+    const it=sc.map[s.id];if(!it||!it.vis)return;const L=it.rect||LAY[it.lay]||LAY.full,x=L[0]*W,y=L[1]*H,w=L[2]*W,h=L[3]*H;
     if(s.kind==='text'){c.fillStyle='rgba(0,0,0,.55)';c.fillRect(x,y+h*.78,w,h*.16);c.fillStyle='#fff';c.font='bold '+Math.round(h*.09)+'px system-ui,sans-serif';c.textAlign='center';c.textBaseline='middle';c.fillText(s.text,x+w/2,y+h*.86,w*.95);return}
-    const sw=s.kind==='video'?s.el.videoWidth:s.el.naturalWidth,sh=s.kind==='video'?s.el.videoHeight:s.el.naturalHeight;if(!sw||!sh)return;
-    const k=Math.max(w/sw,h/sh),cw=w/k,ch=h/k;c.drawImage(s.el,(sw-cw)/2,(sh-ch)/2,cw,ch,x,y,w,h);
+    const v=s.el instanceof HTMLVideoElement,sw=v?s.el.videoWidth:s.el.naturalWidth,sh=v?s.el.videoHeight:s.el.naturalHeight;if(!sw||!sh)return;
+    if(it.fit==='fit'){const k=Math.min(w/sw,h/sh),dw=sw*k,dh=sh*k;c.drawImage(s.el,x+(w-dw)/2,y+(h-dh)/2,dw,dh)}
+    else{const k=Math.max(w/sw,h/sh),cw=w/k,ch=h/k;c.drawImage(s.el,(sw-cw)/2,(sh-ch)/2,cw,ch,x,y,w,h)}
   });
 }
-const pvc=$('pv').getContext('2d'),pgc=$('pg').getContext('2d');
-(function loop(){drawScene(pvc,scenes[pre]);drawScene(pgc,scenes[prog]);requestAnimationFrame(loop)})();
-render();
+const rectOf=it=>it.rect||LAY[it.lay]||LAY.full;
+let drag=null;const pvEl=$('pv');
+const norm=e=>{const b=pvEl.getBoundingClientRect();return[(e.clientX-b.left)/b.width,(e.clientY-b.top)/b.height]};
+pvEl.addEventListener('pointerdown',e=>{
+  if(!studio)return;const[nx,ny]=norm(e),cur=sel&&pre.map[sel.id];
+  if(cur&&cur.vis){const[x,y,w,h]=rectOf(cur);if(nx>x+w-.06&&nx<x+w+.02&&ny>y+h-.1&&ny<y+h+.03){drag={mode:'size',it:cur,nx,ny,r:[...rectOf(cur)]};pvEl.setPointerCapture(e.pointerId);return}}
+  for(let i=sources.length-1;i>=0;i--){const s=sources[i],it=pre.map[s.id];if(!it||!it.vis)continue;const[x,y,w,h]=rectOf(it);
+    if(nx>=x&&nx<=x+w&&ny>=y&&ny<=y+h){sel=s;drag={mode:'move',it,nx,ny,r:[...rectOf(it)]};pvEl.setPointerCapture(e.pointerId);renderSources();return}}
+});
+pvEl.addEventListener('pointermove',e=>{
+  if(!drag)return;const[nx,ny]=norm(e),dx=nx-drag.nx,dy=ny-drag.ny,[x,y,w,h]=drag.r;drag.it.lay='custom';
+  if(drag.mode==='move')drag.it.rect=[Math.max(-w/2,Math.min(1-w/2,x+dx)),Math.max(-h/2,Math.min(1-h/2,y+dy)),w,h];
+  else{const nw=Math.max(.08,Math.min(1.5,w+dx));drag.it.rect=[x,y,nw,h*nw/w]}
+});
+const endDrag=()=>{if(drag){drag=null;renderSources()}};
+pvEl.addEventListener('pointerup',endDrag);pvEl.addEventListener('pointercancel',endDrag);
+function drawSel(){
+  const it=sel&&pre.map[sel.id];if(!it||!it.vis)return;const[x,y,w,h]=rectOf(it),W=1280,H=720;
+  pvc.strokeStyle='#2fc4ae';pvc.lineWidth=4;pvc.strokeRect(x*W,y*H,w*W,h*H);pvc.fillStyle='#2fc4ae';pvc.fillRect((x+w)*W-30,(y+h)*H-30,30,30);
+}
+const pvc=$('pv').getContext('2d'),pgc=$('pg').getContext('2d');let frames=0,lastF=performance.now();
+function loop(now){
+  if(studio){drawScene(pvc,pre);drawSel()}
+  if(tr){const p=Math.min(1,(now-tr.t0)/tr.ms);drawScene(pgc,tr.from);pgc.globalAlpha=p;drawScene(pgc,prog,true);pgc.globalAlpha=1;if(p>=1)tr=null}else drawScene(pgc,prog);
+  frames++;if(now-lastF>=1000){$('pFps').textContent=Math.round(frames*1000/(now-lastF))+' fps';frames=0;lastF=now}
+  meters();requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);renderAll();renderAudio();
+if('serviceWorker' in navigator)navigator.serviceWorker.register('/sw.js').catch(()=>{});
+let ip=null;window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();ip=e;$('install').hidden=false});
+$('install').onclick=async()=>{if(ip){ip.prompt();await ip.userChoice;ip=null;$('install').hidden=true}};
 
-// Recording and streaming
-$('mic').onchange=async()=>{
-  mixer();
-  if($('mic').checked){try{micStream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true}});micSrc=ac.createMediaStreamSource(micStream);micSrc.connect(adest)}catch{$('mic').checked=false;msg('Microphone blocked. Allow it in browser settings.')}}
-  else{if(micSrc)micSrc.disconnect();if(micStream)micStream.getTracks().forEach(t=>t.stop());micSrc=micStream=null}
-};
+// ---------- Record and stream
+let wl=null;const wake=async on=>{try{if(on&&navigator.wakeLock)wl=await navigator.wakeLock.request('screen');else if(wl){wl.release();wl=null}}catch{}};
 async function makeRecorder(mime){
-  const out=$('pg').captureStream(30);mixer();
-  out.addTrack(adest.stream.getAudioTracks()[0].clone());
+  const out=$('pg').captureStream(30);mixer();out.addTrack(adest.stream.getAudioTracks()[0].clone());
   return new MediaRecorder(out,{mimeType:mime||undefined,videoBitsPerSecond:5e6});
 }
-let rec=null,t0=0,tick=null;
-function clock(){const s=Math.floor((Date.now()-t0)/1000);$('clock').textContent=(rec||live?'● ':'')+String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0')}
+const fmt=ms=>{const s=Math.floor(ms/1000);return String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0')};
+let rec=null,recT0=0,live=null,liveT0=0,bytes=0,lastB=0;
+setInterval(()=>{
+  if(rec)$('tRec').textContent=fmt(Date.now()-recT0);
+  if(live){$('tLive').textContent=fmt(Date.now()-liveT0);$('pBit').textContent=Math.round((bytes-lastB)*8/1000)+' kb/s';lastB=bytes;$('pNet').hidden=!(live.ws.bufferedAmount>1.5e6)}
+},1000);
+function flags(){$('pRec').hidden=!rec;$('pLive').hidden=!live;$('rec').className=rec?'on':'';$('liveTxt').textContent=live?'Stop stream':'Go live';$('onair').hidden=!(live||rec);if(!live){$('pBit').textContent='0 kb/s';$('pNet').hidden=true}wake(!!(rec||live))}
 $('rec').onclick=async()=>{
   if(rec){rec.stop();return}
   if(!window.MediaRecorder)return msg('Recording is not supported in this browser.');
-  const mime=['video/mp4;codecs=avc1','video/mp4','video/webm;codecs=vp9,opus','video/webm'].find(m=>MediaRecorder.isTypeSupported(m));
-  const chunks=[];rec=await makeRecorder(mime);
-  rec.ondataavailable=e=>e.data.size&&chunks.push(e.data);
-  rec.onstop=()=>{const type=rec.mimeType||'video/webm',ext=type.includes('mp4')?'mp4':'webm';
-    const url=URL.createObjectURL(new Blob(chunks,{type})),name='forge-'+new Date().toISOString().slice(0,19).replace(/[:T]/g,'-')+'.'+ext;
-    const r=$('recs');if(r.querySelector('.empty'))r.innerHTML='';
-    const d=document.createElement('div');d.className='src';const a=document.createElement('a');a.href=url;a.download=name;a.textContent='Save '+name;a.style.flex=1;d.append(a);r.prepend(d);
-    rec=null;$('rec').textContent='Record to device';$('rec').className='';if(!live)clearInterval(tick)};
-  rec.start(1000);t0=Date.now();clearInterval(tick);tick=setInterval(clock,500);$('rec').textContent='Stop recording';$('rec').className='pri';
+  const mime=['video/mp4;codecs=avc1','video/mp4','video/webm;codecs=vp9,opus','video/webm'].find(m=>MediaRecorder.isTypeSupported(m)),chunks=[];
+  rec=await makeRecorder(mime);rec.ondataavailable=e=>e.data.size&&chunks.push(e.data);
+  rec.onstop=()=>{const type=rec.mimeType||'video/webm',ext=type.includes('mp4')?'mp4':'webm',url=URL.createObjectURL(new Blob(chunks,{type})),name='forge-'+new Date().toISOString().slice(0,19).replace(/[:T]/g,'-')+'.'+ext;
+    const a=document.createElement('a');a.href=url;a.download=name;a.textContent='Save '+name;a.className='row';$('recs').prepend(a);rec=null;flags()};
+  rec.start(1000);recT0=Date.now();flags();
 };
-let live=null;
 function addDest(){
   const d=document.createElement('div');d.className='dest';
-  const p=document.createElement('select');Object.keys(PRESETS).forEach(k=>p.add(new Option(k)));
-  const k=document.createElement('input');k.className='k';k.type='password';k.placeholder='Stream key';k.autocomplete='off';
-  const u=document.createElement('input');u.className='u';u.value=PRESETS.Twitch;u.setAttribute('aria-label','Server URL');
-  p.onchange=()=>u.value=PRESETS[p.value];d.append(p,k,u);$('dests').append(d);
+  const p=document.createElement('select');p.setAttribute('aria-label','Platform');Object.keys(PRESETS).forEach(k=>p.add(new Option(k)));
+  const x=document.createElement('button');x.className='ic';x.setAttribute('aria-label','Remove destination');x.innerHTML=ic('trash');x.onclick=()=>d.remove();
+  const k=document.createElement('input');k.className='k full';k.type='password';k.placeholder='Stream key';k.autocomplete='off';
+  const u=document.createElement('input');u.className='u full';u.type='text';u.value=PRESETS.Twitch;u.hidden=true;u.setAttribute('aria-label','Server URL');
+  p.onchange=()=>{u.value=PRESETS[p.value];u.hidden=p.value!=='Custom'};
+  d.append(p,x,k,u);$('dests').append(d);
 }
 addDest();$('addDest').onclick=addDest;
 $('liveBtn').onclick=()=>{
   if(live){live.r.stop();live.ws.close();return}
   const dests=[...document.querySelectorAll('.dest')].map(d=>{const u=d.querySelector('.u').value.trim().replace(/\/$/,''),k=d.querySelector('.k').value.trim();return u&&k?u+'/'+k:''}).filter(Boolean);
-  if(!dests.length)return msg('Add at least one destination with a stream key.');
+  if(!dests.length){document.querySelector('#dtabs [data-d=stream]').click();return msg('Add a stream key in the Stream panel first.')}
   const mime='video/webm;codecs=h264,opus';
   if(!window.MediaRecorder||!MediaRecorder.isTypeSupported(mime))return msg('Going live needs Chrome on desktop or Android. Safari cannot send the H.264 stream.');
   const ws=new WebSocket(WS+'/out');ws.binaryType='arraybuffer';
   ws.onopen=async()=>{
     ws.send(JSON.stringify({dests,key:$('key').value}));
     const r=await makeRecorder(mime);let q=Promise.resolve();
-    r.ondataavailable=e=>{if(e.data.size)q=q.then(()=>e.data.arrayBuffer()).then(b=>{if(ws.readyState===1)ws.send(b)})};
-    r.start(500);live={ws,r};t0=Date.now();clearInterval(tick);tick=setInterval(clock,500);$('liveBtn').textContent='Stop stream';
+    r.ondataavailable=e=>{if(e.data.size)q=q.then(()=>e.data.arrayBuffer()).then(b=>{bytes+=b.byteLength;if(ws.readyState===1)ws.send(b)})};
+    r.start(500);live={ws,r};liveT0=Date.now();bytes=lastB=0;flags();
   };
   ws.onmessage=e=>{const o=JSON.parse(e.data);if(o.log)msg(o.log.slice(0,240))};
-  ws.onclose=()=>{if(live&&live.r.state!=='inactive')live.r.stop();live=null;$('liveBtn').textContent='Go live';if(!rec){clearInterval(tick);$('clock').textContent=''}};
+  ws.onerror=()=>msg('Could not reach the server. Check your link and password.');
+  ws.onclose=()=>{if(live&&live.r.state!=='inactive')live.r.stop();live=null;flags()};
 };
 </script></body></html>
