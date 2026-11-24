@@ -1,0 +1,43 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Forge camera</title>
+<style>
+body{margin:0;background:#101416;color:#e8eef0;font:16px system-ui,-apple-system,sans-serif;display:grid;gap:12px;padding:16px;padding-top:max(16px,env(safe-area-inset-top))}
+video{width:100%;background:#000;border-radius:10px;aspect-ratio:16/9;object-fit:cover}
+button,select{font:inherit;padding:12px 14px;border-radius:10px;border:1px solid #2b363c;background:#192024;color:#e8eef0;min-height:44px}
+button.go{background:#2fc4ae;color:#04201b;font-weight:700;border-color:#2fc4ae}
+.row{display:flex;gap:8px;flex-wrap:wrap}#st{color:#8d9ca4;min-height:22px}
+</style></head><body>
+<h1 style="font-size:18px;margin:0">Forge camera</h1>
+<video id="v" muted playsinline></video>
+<div class="row"><select id="face"><option value="environment">Back camera</option><option value="user">Front camera</option></select>
+<button class="go" id="go">Start camera</button></div>
+<div id="st" role="status">Allow camera access, then tap Start. Keep this screen open.</div>
+<script>
+const $=i=>document.getElementById(i),room=new URLSearchParams(location.search).get('room');
+let pc,ws,stream;
+async function cam(){
+  if(stream)stream.getTracks().forEach(t=>t.stop());
+  stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:$('face').value,width:{ideal:1920},height:{ideal:1080},frameRate:{ideal:30}},audio:false});
+  $('v').srcObject=stream;$('v').play();return stream.getVideoTracks()[0];
+}
+$('face').onchange=async()=>{if(!pc)return;const t=await cam();pc.getSenders().find(s=>s.track&&s.track.kind==='video').replaceTrack(t)};
+$('go').onclick=async()=>{
+  if(!room){$('st').textContent='This link has no studio code. Scan the QR code again.';return}
+  try{var t=await cam()}catch{$('st').textContent='Camera blocked. Allow camera access in browser settings.';return}
+  try{navigator.wakeLock&&navigator.wakeLock.request('screen')}catch{}
+  $('go').disabled=true;$('st').textContent='Connecting to studio…';
+  ws=new WebSocket(location.origin.replace(/^http/,'ws')+'/ws?role=cam&room='+room);
+  const ice=await fetch('/ice').then(r=>r.json()).catch(()=>[]);
+  pc=new RTCPeerConnection({iceServers:ice.length?ice:[{urls:'stun:stun.l.google.com:19302'}]});
+  pc.addTrack(t,stream);
+  try{const au=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true}});pc.addTrack(au.getAudioTracks()[0],au)}catch{$('st').textContent='Microphone blocked. Sending video only.'}
+  pc.onicecandidate=e=>e.candidate&&ws.readyState===1&&ws.send(JSON.stringify({type:'ice',data:e.candidate}));
+  pc.onconnectionstatechange=()=>{$('st').textContent=pc.connectionState==='connected'?'Live in studio. Keep this screen open.':pc.connectionState==='failed'?'Could not connect. Try the same Wi-Fi as the studio.':'Connecting to studio…'};
+  ws.onopen=async()=>{const o=await pc.createOffer();await pc.setLocalDescription(o);ws.send(JSON.stringify({type:'offer',data:o}))};
+  ws.onmessage=async e=>{const o=JSON.parse(e.data);
+    if(o.type==='answer')await pc.setRemoteDescription(o.data);
+    else if(o.type==='ice')await pc.addIceCandidate(o.data);
+    else if(o.type==='error'){$('st').textContent=o.text;$('go').disabled=false}};
+  ws.onclose=()=>{if(pc.connectionState!=='connected')$('go').disabled=false};
+};
+</script></body></html>

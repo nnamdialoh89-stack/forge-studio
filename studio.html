@@ -1,0 +1,188 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Forge Studio</title>
+<style>
+:root{--bg:#101416;--panel:#192024;--ink:#e8eef0;--mute:#8d9ca4;--line:#2b363c;--acc:#2fc4ae;--acc-ink:#04201b;--rec:#ff6a55;--pgm:#e5484d}
+@media(prefers-color-scheme:light){:root{--bg:#f2f4f5;--panel:#fff;--ink:#14191c;--mute:#5d6a72;--line:#d5dbde;--acc:#0b7d6e;--acc-ink:#fff;--rec:#c8321f}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.4 system-ui,-apple-system,sans-serif;padding:max(10px,env(safe-area-inset-top)) 10px 10px}
+h1{font-size:17px;margin:0}h2{font-size:13px;margin:0 0 8px;color:var(--mute);font-weight:600}
+.top{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+.layout{display:grid;gap:10px}.side{display:grid;gap:10px;align-content:start}
+@media(orientation:landscape) and (min-width:700px){.layout{grid-template-columns:1.6fr 1fr;align-items:start}.mons{grid-template-columns:1fr 1fr}}
+.mons{display:grid;gap:10px}.mon canvas{width:100%;aspect-ratio:16/9;background:#000;border-radius:6px;display:block;border:2px solid var(--line)}
+.mon.pgm canvas{border-color:var(--pgm)}.mon.pv canvas{border-color:var(--acc)}
+.mon b{font-size:12px;color:var(--mute);font-weight:600;display:block;margin-bottom:4px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px}
+button,select,input{font:inherit;color:var(--ink);background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:8px 10px;min-height:40px}
+button{cursor:pointer}button.pri{background:var(--acc);color:var(--acc-ink);border-color:var(--acc);font-weight:600}
+button.live{background:var(--rec);color:#fff;border-color:var(--rec);font-weight:600}
+button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+.row{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.tabs button[aria-pressed=true]{border-color:var(--acc);box-shadow:inset 0 0 0 1px var(--acc)}
+.tabs button.onair{background:var(--pgm);color:#fff;border-color:var(--pgm)}
+.src{display:flex;gap:6px;align-items:center;padding:6px 0;border-top:1px solid var(--line)}.src:first-child{border-top:0}
+.src span{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dest{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px}.dest input{width:100%}.dest .u{grid-column:1/-1}
+#msg{color:var(--rec);min-height:20px;margin:6px 0 0;font-size:13px;word-break:break-word}
+#qr{display:none;text-align:center}#qr.on{display:block}#qr canvas,#qr img{background:#fff;padding:8px;border-radius:8px;max-width:100%}
+#qrlink{font-size:12px;color:var(--mute);word-break:break-all}
+a{color:var(--acc)}.empty{color:var(--mute);margin:2px 0}
+</style></head><body>
+<div class="top"><h1>Forge Studio</h1>
+  <div class="row"><button id="rec">Record to device</button><button id="liveBtn" class="live">Go live</button><span id="clock" style="color:var(--mute)"></span></div></div>
+<div class="layout">
+ <div>
+  <div class="mons">
+   <div class="mon pv"><b>Preview</b><canvas id="pv" width="1280" height="720"></canvas></div>
+   <div class="mon pgm"><b>Program (what you stream and record)</b><canvas id="pg" width="1280" height="720"></canvas></div>
+  </div>
+  <div class="row" style="margin-top:8px"><button class="pri" id="take">Take preview to program</button>
+   <label class="row"><input type="checkbox" id="mic"> Microphone</label></div>
+  <p id="msg" role="status"></p>
+ </div>
+ <div class="side">
+  <div class="card"><h2>Scenes (tap to preview, green = on air)</h2><div class="row tabs" id="tabs"></div><div class="row" style="margin-top:6px"><button id="addScene">New scene</button></div></div>
+  <div class="card"><h2>Sources in preview scene</h2><div id="srcs"></div>
+   <div class="row" style="margin-top:8px"><button id="addPhone" class="pri">Add phone (QR)</button><button id="addCam">Camera</button><button id="addScr">Screen</button><button id="addImg">Image</button><button id="addTxt">Text</button>
+   <select id="face"><option value="user">Front</option><option value="environment">Back</option></select></div>
+   <input type="file" id="file" accept="image/*" hidden>
+   <div id="qr" class="card" style="margin-top:8px"><div id="qrbox"></div><p>Scan with the other phone's camera app.</p><div id="qrlink"></div></div></div>
+  <div class="card"><h2>Stream destinations (multi-stream)</h2><div id="dests"></div>
+   <div class="row"><button id="addDest">Add destination</button></div>
+   <div class="row" style="margin-top:8px"><input id="key" type="password" placeholder="Server password (if set)" autocomplete="off" style="flex:1"></div></div>
+  <div class="card"><h2>Local recordings</h2><div id="recs"><p class="empty">Recordings appear here to save.</p></div></div>
+ </div>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script>
+const $=i=>document.getElementById(i),WS=location.origin.replace(/^http/,'ws');
+const PRESETS={Twitch:'rtmp://live.twitch.tv/app',YouTube:'rtmp://a.rtmp.youtube.com/live2',Facebook:'rtmps://live-api-s.facebook.com:443/rtmp',Custom:''};
+const LAY={off:null,full:[0,0,1,1],pip:[.66,.62,.32,.34],left:[0,0,.5,1],right:[.5,0,.5,1]};
+let sources=[],scenes=[{name:'Scene 1',map:{}}],pre=0,prog=0,uid=1;
+const room=[...crypto.getRandomValues(new Uint8Array(12))].map(b=>b.toString(36).padStart(2,'0')).join('');
+const msg=t=>$('msg').textContent=t||'';
+let ICE=[{urls:'stun:stun.l.google.com:19302'}];fetch('/ice').then(r=>r.json()).then(j=>{if(j.length)ICE=j}).catch(()=>{});
+let ac=null,adest=null,micSrc=null,micStream=null;
+function mixer(){if(!ac){ac=new(window.AudioContext||window.webkitAudioContext)();adest=ac.createMediaStreamDestination()}if(ac.state==='suspended')ac.resume();return ac}
+document.addEventListener('click',mixer);
+
+function render(){
+  $('tabs').innerHTML='';
+  scenes.forEach((s,i)=>{const b=document.createElement('button');b.textContent=s.name;b.setAttribute('aria-pressed',i===pre);if(i===prog)b.className='onair';b.onclick=()=>{pre=i;render()};$('tabs').append(b)});
+  const box=$('srcs');box.innerHTML=sources.length?'':'<p class="empty">No sources yet. Add a phone, camera, screen, image, or text.</p>';
+  sources.forEach(s=>{
+    const d=document.createElement('div');d.className='src';
+    const n=document.createElement('span');n.textContent=s.name;
+    const sel=document.createElement('select');sel.setAttribute('aria-label','Layout for '+s.name);
+    [['off','Hidden'],['full','Full'],['pip','Corner'],['left','Left'],['right','Right']].forEach(([v,l])=>sel.add(new Option(l,v)));
+    sel.value=scenes[pre].map[s.id]||'off';sel.onchange=()=>scenes[pre].map[s.id]=sel.value;
+    const x=document.createElement('button');x.textContent='Remove';x.onclick=()=>{if(s.stream)s.stream.getTracks().forEach(t=>t.stop());if(s.peer)s.peer.close();sources=sources.filter(q=>q!==s);render()};
+    d.append(n,sel);
+    if(s.gain){const l=document.createElement('label');l.className='row';const c=document.createElement('input');c.type='checkbox';c.checked=s.gain.gain.value>0;c.onchange=()=>s.gain.gain.value=c.checked?1:0;l.append(c,'Sound');d.append(l)}
+    d.append(x);box.append(d);
+  });
+}
+function addSrc(s){s.id=uid++;sources.push(s);scenes[pre].map[s.id]='full';render();return s}
+const vid=st=>{const v=document.createElement('video');v.muted=true;v.playsInline=true;v.autoplay=true;if(st)v.srcObject=st;v.play().catch(()=>{});return v};
+$('take').onclick=()=>{prog=pre;render()};
+$('addScene').onclick=()=>{scenes.push({name:'Scene '+(scenes.length+1),map:{}});pre=scenes.length-1;render()};
+$('addCam').onclick=async()=>{msg();try{const st=await navigator.mediaDevices.getUserMedia({video:{facingMode:$('face').value,width:{ideal:1920},height:{ideal:1080}}});addSrc({name:'This phone camera',kind:'video',el:vid(st),stream:st})}catch{msg('Camera blocked. Allow camera access and try again.')}};
+$('addScr').onclick=async()=>{msg();try{const st=await navigator.mediaDevices.getDisplayMedia({video:true});addSrc({name:'Screen',kind:'video',el:vid(st),stream:st})}catch{msg('Screen capture is not available in this browser (not on iPhone).')}};
+$('addImg').onclick=()=>$('file').click();
+$('file').onchange=e=>{const f=e.target.files[0];if(!f)return;const im=new Image();im.onload=()=>addSrc({name:f.name,kind:'img',el:im});im.src=URL.createObjectURL(f);e.target.value=''};
+$('addTxt').onclick=()=>{const t=prompt('Text to show on screen');if(t)addSrc({name:'Text: '+t.slice(0,18),kind:'text',text:t})};
+
+// Phone pairing
+let sig=null;const peers={},phones={};
+function connectSig(){
+  if(sig&&sig.readyState<2)return;
+  sig=new WebSocket(WS+'/ws?role=studio&room='+room+'&key='+encodeURIComponent($('key').value));
+  sig.onmessage=async e=>{
+    const o=JSON.parse(e.data),tx=m=>sig.send(JSON.stringify({to:o.from,...m}));
+    if(o.type==='error')msg(o.text);
+    else if(o.type==='joined'){phones[o.from]=addSrc({name:'Phone '+o.from,kind:'video',el:vid()});$('qr').classList.remove('on')}
+    else if(o.type==='offer'){
+      const pc=new RTCPeerConnection({iceServers:ICE});peers[o.from]=pc;
+      if(phones[o.from])phones[o.from].peer=pc;
+      pc.ontrack=ev=>{const s=phones[o.from],el=s.el;
+        if(el.srcObject!==ev.streams[0]){el.srcObject=ev.streams[0];el.play().catch(()=>{})}
+        if(ev.track.kind==='audio'){const m=mixer(),g=m.createGain();m.createMediaStreamSource(new MediaStream([ev.track])).connect(g);g.connect(adest);s.gain=g;render()}};
+      pc.onicecandidate=ev=>ev.candidate&&tx({type:'ice',data:ev.candidate});
+      pc.ready=pc.setRemoteDescription(o.data);await pc.ready;
+      const a=await pc.createAnswer();await pc.setLocalDescription(a);tx({type:'answer',data:a});
+    }else if(o.type==='ice'){const pc=peers[o.from];if(pc){await pc.ready;pc.addIceCandidate(o.data).catch(()=>{})}}
+    else if(o.type==='left'){const s=phones[o.from];if(s)s.name='Phone '+o.from+' (disconnected)';delete peers[o.from];render()}
+  };
+  sig.onclose=()=>{sig=null};
+}
+$('addPhone').onclick=()=>{
+  connectSig();const url=location.origin+'/cam?room='+room;
+  $('qrbox').innerHTML='';new QRCode($('qrbox'),{text:url,width:200,height:200});
+  $('qrlink').textContent=url;$('qr').classList.add('on');
+};
+
+// Compositor
+function drawScene(c,sc){
+  const W=1280,H=720;c.fillStyle='#000';c.fillRect(0,0,W,H);
+  sources.forEach(s=>{
+    const L=LAY[sc.map[s.id]||'off'];if(!L)return;const x=L[0]*W,y=L[1]*H,w=L[2]*W,h=L[3]*H;
+    if(s.kind==='text'){c.fillStyle='rgba(0,0,0,.55)';c.fillRect(x,y+h*.78,w,h*.16);c.fillStyle='#fff';c.font='bold '+Math.round(h*.09)+'px system-ui,sans-serif';c.textAlign='center';c.textBaseline='middle';c.fillText(s.text,x+w/2,y+h*.86,w*.95);return}
+    const sw=s.kind==='video'?s.el.videoWidth:s.el.naturalWidth,sh=s.kind==='video'?s.el.videoHeight:s.el.naturalHeight;if(!sw||!sh)return;
+    const k=Math.max(w/sw,h/sh),cw=w/k,ch=h/k;c.drawImage(s.el,(sw-cw)/2,(sh-ch)/2,cw,ch,x,y,w,h);
+  });
+}
+const pvc=$('pv').getContext('2d'),pgc=$('pg').getContext('2d');
+(function loop(){drawScene(pvc,scenes[pre]);drawScene(pgc,scenes[prog]);requestAnimationFrame(loop)})();
+render();
+
+// Recording and streaming
+$('mic').onchange=async()=>{
+  mixer();
+  if($('mic').checked){try{micStream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true}});micSrc=ac.createMediaStreamSource(micStream);micSrc.connect(adest)}catch{$('mic').checked=false;msg('Microphone blocked. Allow it in browser settings.')}}
+  else{if(micSrc)micSrc.disconnect();if(micStream)micStream.getTracks().forEach(t=>t.stop());micSrc=micStream=null}
+};
+async function makeRecorder(mime){
+  const out=$('pg').captureStream(30);mixer();
+  out.addTrack(adest.stream.getAudioTracks()[0].clone());
+  return new MediaRecorder(out,{mimeType:mime||undefined,videoBitsPerSecond:5e6});
+}
+let rec=null,t0=0,tick=null;
+function clock(){const s=Math.floor((Date.now()-t0)/1000);$('clock').textContent=(rec||live?'● ':'')+String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0')}
+$('rec').onclick=async()=>{
+  if(rec){rec.stop();return}
+  if(!window.MediaRecorder)return msg('Recording is not supported in this browser.');
+  const mime=['video/mp4;codecs=avc1','video/mp4','video/webm;codecs=vp9,opus','video/webm'].find(m=>MediaRecorder.isTypeSupported(m));
+  const chunks=[];rec=await makeRecorder(mime);
+  rec.ondataavailable=e=>e.data.size&&chunks.push(e.data);
+  rec.onstop=()=>{const type=rec.mimeType||'video/webm',ext=type.includes('mp4')?'mp4':'webm';
+    const url=URL.createObjectURL(new Blob(chunks,{type})),name='forge-'+new Date().toISOString().slice(0,19).replace(/[:T]/g,'-')+'.'+ext;
+    const r=$('recs');if(r.querySelector('.empty'))r.innerHTML='';
+    const d=document.createElement('div');d.className='src';const a=document.createElement('a');a.href=url;a.download=name;a.textContent='Save '+name;a.style.flex=1;d.append(a);r.prepend(d);
+    rec=null;$('rec').textContent='Record to device';$('rec').className='';if(!live)clearInterval(tick)};
+  rec.start(1000);t0=Date.now();clearInterval(tick);tick=setInterval(clock,500);$('rec').textContent='Stop recording';$('rec').className='pri';
+};
+let live=null;
+function addDest(){
+  const d=document.createElement('div');d.className='dest';
+  const p=document.createElement('select');Object.keys(PRESETS).forEach(k=>p.add(new Option(k)));
+  const k=document.createElement('input');k.className='k';k.type='password';k.placeholder='Stream key';k.autocomplete='off';
+  const u=document.createElement('input');u.className='u';u.value=PRESETS.Twitch;u.setAttribute('aria-label','Server URL');
+  p.onchange=()=>u.value=PRESETS[p.value];d.append(p,k,u);$('dests').append(d);
+}
+addDest();$('addDest').onclick=addDest;
+$('liveBtn').onclick=()=>{
+  if(live){live.r.stop();live.ws.close();return}
+  const dests=[...document.querySelectorAll('.dest')].map(d=>{const u=d.querySelector('.u').value.trim().replace(/\/$/,''),k=d.querySelector('.k').value.trim();return u&&k?u+'/'+k:''}).filter(Boolean);
+  if(!dests.length)return msg('Add at least one destination with a stream key.');
+  const mime='video/webm;codecs=h264,opus';
+  if(!window.MediaRecorder||!MediaRecorder.isTypeSupported(mime))return msg('Going live needs Chrome on desktop or Android. Safari cannot send the H.264 stream.');
+  const ws=new WebSocket(WS+'/out');ws.binaryType='arraybuffer';
+  ws.onopen=async()=>{
+    ws.send(JSON.stringify({dests,key:$('key').value}));
+    const r=await makeRecorder(mime);let q=Promise.resolve();
+    r.ondataavailable=e=>{if(e.data.size)q=q.then(()=>e.data.arrayBuffer()).then(b=>{if(ws.readyState===1)ws.send(b)})};
+    r.start(500);live={ws,r};t0=Date.now();clearInterval(tick);tick=setInterval(clock,500);$('liveBtn').textContent='Stop stream';
+  };
+  ws.onmessage=e=>{const o=JSON.parse(e.data);if(o.log)msg(o.log.slice(0,240))};
+  ws.onclose=()=>{if(live&&live.r.state!=='inactive')live.r.stop();live=null;$('liveBtn').textContent='Go live';if(!rec){clearInterval(tick);$('clock').textContent=''}};
+};
+</script></body></html>
