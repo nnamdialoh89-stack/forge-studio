@@ -53,7 +53,7 @@ select,input[type=text],input[type=password],input[type=number]{background:var(-
 .mix .lab{grid-column:1/-1;font-size:12px;color:var(--mute);display:flex;justify-content:space-between}
 .meter{height:8px;background:var(--panel2);border-radius:4px;overflow:hidden;grid-column:2}.meter i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--ok) 70%,var(--warn) 85%,var(--live))}
 .mix input[type=range]{grid-column:2;width:100%}.mix button{grid-row:2/4;grid-column:1;width:30px;min-height:30px;padding:0}
-.dest{display:grid;grid-template-columns:1fr auto;gap:6px;padding:6px;background:var(--panel2);border-radius:8px}.dest select,.dest input{width:100%}.dest .full{grid-column:1/-1}
+.dest .pn{font-weight:600;align-self:center}.dest{display:grid;grid-template-columns:1fr auto;gap:6px;padding:6px;background:var(--panel2);border-radius:8px}.dest select,.dest input{width:100%}.dest .full{grid-column:1/-1}
 .small{color:var(--mute);font-size:12px;margin:0;padding:2px 6px}
 #msg{color:var(--warn);font-size:13px;min-height:18px;margin:0;padding:0 4px;word-break:break-word}
 dialog{background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:12px;max-width:340px;text-align:center}
@@ -94,9 +94,8 @@ body.nostudio #pvMon{display:none}body.nostudio .monitors{grid-template-columns:
     <button id="addCam"><span data-ic="cam"></span>Device camera</button><button id="addPhone"><span data-ic="phone"></span>Phone camera (QR)</button><button id="addScr"><span data-ic="screen"></span>Screen capture</button><button id="addImg"><span data-ic="image"></span>Image</button><button id="addTxt"><span data-ic="text"></span>Text</button></div>
     <div id="srcList"></div></div></div>
   <div class="dock" data-d="audio"><div class="dh"><b>Audio mixer</b></div><div class="dbody" id="mixer"></div></div>
-  <div class="dock" data-d="stream"><div class="dh"><b>Stream and record</b><button id="addDest" aria-label="Add destination" data-ic="plus"></button></div><div class="dbody"><div id="dests" style="display:grid;gap:6px"></div>
+  <div class="dock" data-d="stream"><div class="dh"><b>Stream and record</b><button id="addDest" aria-label="Add destination" data-ic="plus"></button></div><div class="dbody"><div class="menu" id="destMenu" hidden><button data-p="Twitch">Twitch</button><button data-p="YouTube">YouTube</button><button data-p="Facebook">Facebook</button><button data-p="Custom">Other (custom RTMP)</button></div><p class="small" id="destHint">Tap + and choose a platform to add its stream key.</p><div id="dests" style="display:grid;gap:6px"></div>
    <label class="chk"><input type="checkbox" id="aOnly" checked><span>Also save a separate MP3 when recording video.</span></label>
-   <input type="password" id="key" placeholder="Server password (if set)" autocomplete="off">
    <p class="small">Stream to several platforms at once by adding destinations. Recordings save to this device.</p><div id="recs"></div></div></div>
    <div class="dock" data-d="settings"><div class="dh"><b>Quality</b></div><div class="dbody">
    <label class="fld">Video quality<select id="qSel"><option value="std">Standard: 720p, 30 fps</option><option value="high" selected>High: 1080p, 30 fps</option><option value="max">Max: 1080p, 60 fps</option></select></label>
@@ -125,6 +124,7 @@ const PRESETS={Twitch:'rtmp://live.twitch.tv/app',YouTube:'rtmp://a.rtmp.youtube
 const LAY={full:[0,0,1,1],'pip-br':[.66,.62,.32,.34],'pip-bl':[.02,.62,.32,.34],'pip-tr':[.66,.04,.32,.34],'pip-tl':[.02,.04,.32,.34],left:[0,0,.5,1],right:[.5,0,.5,1],top:[0,0,1,.5],bottom:[0,.5,1,.5]};
 const LAYN={full:'Full screen','pip-br':'Corner bottom right','pip-bl':'Corner bottom left','pip-tr':'Corner top right','pip-tl':'Corner top left',left:'Left half',right:'Right half',top:'Top half',bottom:'Bottom half'};
 const KIND={cam:'cam',phone:'phone',screen:'screen',img:'image',text:'text'};
+let rec=null,recT0=0,live=null,liveT0=0,bytes=0,lastB=0;
 let sources=[],scenes=[{name:'Scene 1',map:{}}],pre=scenes[0],prog=snap(scenes[0]),sel=null,uid=1,studio=true,tr=null,sceneN=1;
 const msg=t=>$('msg').textContent=t||'';
 function snap(sc){return{src:sc,name:sc.name,map:JSON.parse(JSON.stringify(sc.map))}}
@@ -262,7 +262,7 @@ const room=[...crypto.getRandomValues(new Uint8Array(12))].map(b=>b.toString(36)
 let sig=null;const peers={},phones={};
 function connectSig(){
   if(sig&&sig.readyState<2)return;
-  sig=new WebSocket(WS+'/ws?role=studio&room='+room+'&key='+encodeURIComponent($('key').value));
+  sig=new WebSocket(WS+'/ws?role=studio&room='+room+'&key=');
   sig.onmessage=async e=>{
     const o=JSON.parse(e.data),tx=m=>sig.send(JSON.stringify({to:o.from,...m}));
     if(o.type==='error')msg(o.text);
@@ -353,7 +353,7 @@ function makeRecorder(mime){
   return new MediaRecorder(out,{mimeType:mime||undefined,videoBitsPerSecond:QP[qk].bps});
 }
 const fmt=ms=>{const s=Math.floor(ms/1000);return String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0')};
-let rec=null,recT0=0,live=null,liveT0=0,bytes=0,lastB=0;
+
 setInterval(()=>{
   if(rec)$('tRec').textContent=fmt(Date.now()-recT0);if(aoRec)$('tAud').textContent=fmt(Date.now()-aoT0);
   if(live){$('tLive').textContent=fmt(Date.now()-liveT0);$('pBit').textContent=Math.round((bytes-lastB)*8/1000)+' kb/s';lastB=bytes;$('pNet').hidden=!(live.ws.bufferedAmount>1.5e6)}
@@ -398,32 +398,31 @@ $('rec').onclick=()=>{
     recA.ondataavailable=e=>e.data.size&&ach.push(e.data);recA.onstop=()=>saveLink(ach,recA.mimeType||'audio/webm','forge-audio-'+stamp);recA.start(1000)}
   flags();
 };
-function addDest(init){
-  const d=document.createElement('div');d.className='dest';
-  const p=document.createElement('select');p.setAttribute('aria-label','Platform');Object.keys(PRESETS).forEach(k=>p.add(new Option(k)));
-  const x=document.createElement('button');x.className='ic';x.setAttribute('aria-label','Remove destination');x.innerHTML=ic('trash');x.onclick=()=>{d.remove();saveDests()};
-  const k=document.createElement('input');k.className='k full';k.type='password';k.placeholder='Stream key';k.autocomplete='off';
-  const u=document.createElement('input');u.className='u full';u.type='text';u.value=PRESETS.Twitch;u.hidden=true;u.setAttribute('aria-label','Server URL');
-  if(init){p.value=init.p;u.value=init.u;k.value=init.k;u.hidden=p.value!=='Custom'}
-  p.onchange=()=>{u.value=PRESETS[p.value];u.hidden=p.value!=='Custom';saveDests()};k.oninput=u.oninput=saveDests;
-  d.append(p,x,k,u);$('dests').append(d);
-}
 const LS={get:k=>{try{return localStorage.getItem(k)}catch{return null}},set:(k,v)=>{try{localStorage.setItem(k,v)}catch{}}};
-function saveDests(){LS.set('forgeDests',JSON.stringify([...document.querySelectorAll('.dest')].map(d=>({p:d.querySelector('select').value,u:d.querySelector('.u').value,k:d.querySelector('.k').value}))));LS.set('forgeKey',$('key').value)}
-let saved=[];try{saved=JSON.parse(LS.get('forgeDests')||'[]')}catch{}
-if(saved.length)saved.forEach(addDest);else addDest();
-$('key').value=LS.get('forgeKey')||'';$('key').oninput=saveDests;$('addDest').onclick=()=>{addDest();saveDests()};
+function saveDests(){LS.set('forgeDests2',JSON.stringify([...document.querySelectorAll('.dest')].map(d=>({p:d.dataset.p,u:d.querySelector('.u').value,k:d.querySelector('.k').value}))));$('destHint').hidden=!!document.querySelector('.dest')}
+function addDest(init){
+  const d=document.createElement('div');d.className='dest';d.dataset.p=init.p;
+  const n=document.createElement('span');n.className='pn';n.textContent=init.p==='Custom'?'Other (custom RTMP)':init.p;
+  const x=document.createElement('button');x.className='ic';x.setAttribute('aria-label','Remove '+n.textContent);x.innerHTML=ic('trash');x.onclick=()=>{d.remove();saveDests()};
+  const k=document.createElement('input');k.className='k full';k.type='password';k.placeholder='Stream key';k.autocomplete='off';k.value=init.k||'';
+  const u=document.createElement('input');u.className='u full';u.type='text';u.value=init.u||PRESETS[init.p]||'';u.hidden=init.p!=='Custom';u.placeholder='rtmp://server/app';u.setAttribute('aria-label','Server URL');
+  k.oninput=u.oninput=saveDests;d.append(n,x,k,u);$('dests').append(d);saveDests();if(!init.k)k.focus();
+}
+let saved=[];try{saved=JSON.parse(LS.get('forgeDests2')||'[]')}catch{}
+saved.forEach(addDest);saveDests();
+$('addDest').onclick=()=>{$('destMenu').hidden=!$('destMenu').hidden};
+document.querySelectorAll('#destMenu button').forEach(b=>b.onclick=()=>{$('destMenu').hidden=true;addDest({p:b.dataset.p})});
 $('liveBtn').onclick=()=>{
   if(live){live.r.stop();live.ws.close();return}
   const dests=[...document.querySelectorAll('.dest')].map(d=>{const u=d.querySelector('.u').value.trim().replace(/\/$/,''),k=d.querySelector('.k').value.trim();return u&&k?u+'/'+k:''}).filter(Boolean);
-  if(!dests.length){document.querySelector('#dtabs [data-d=stream]').click();return msg('Add your stream key in the Stream tab first. It is saved on this device, so next time Go live starts at once.')}
+  if(!dests.length){document.querySelector('#dtabs [data-d=stream]').click();$('destMenu').hidden=false;return msg('Add your stream key in the Stream tab first. It is saved on this device, so next time Go live starts at once.')}
   const mime='video/webm;codecs=h264,opus';
   if(!window.MediaRecorder||!MediaRecorder.isTypeSupported(mime))return msg('Going live needs Chrome on desktop or Android. Safari cannot send the H.264 stream.');
   msg();mixer();ensureMic();
   const ws=new WebSocket(WS+'/out');ws.binaryType='arraybuffer';
   const r=makeRecorder(mime),pend=[];let q=Promise.resolve();
   live={ws,r};liveT0=Date.now();bytes=lastB=0;
-  ws.onopen=()=>ws.send(JSON.stringify({dests,key:$('key').value}));
+  ws.onopen=()=>ws.send(JSON.stringify({dests}));
   r.ondataavailable=e=>{if(!e.data.size)return;q=q.then(()=>e.data.arrayBuffer()).then(b=>{bytes+=b.byteLength;if(ws.readyState===1){while(pend.length)ws.send(pend.shift());ws.send(b)}else if(ws.readyState===0&&pend.length<60)pend.push(b)})};
   ws.onmessage=e=>{const o=JSON.parse(e.data);if(o.log)msg(o.log.slice(0,240))};
   ws.onerror=()=>msg('Could not reach the server. Check your link and password.');
