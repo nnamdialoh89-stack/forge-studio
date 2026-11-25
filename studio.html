@@ -59,19 +59,19 @@ select,input[type=text],input[type=password],input[type=number]{background:var(-
 dialog{background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:12px;max-width:340px;text-align:center}
 dialog::backdrop{background:rgba(0,0,0,.6)}#qrbox{display:inline-block;background:#fff;padding:10px;border-radius:8px}
 #qrlink{font-size:12px;color:var(--mute);word-break:break-all}
-a{color:var(--acc)}
+.fld{display:grid;gap:4px;color:var(--mute);font-size:12px;padding:0 6px}.chk{display:flex;gap:8px;align-items:flex-start;font-size:13px;padding:2px 6px}.chk input{margin-top:3px}#enh{display:grid;gap:4px;padding:0 6px}#enh .sl{flex:none}a{color:var(--acc)}
 @media(orientation:landscape) and (max-width:1099px) and (min-width:560px){
  .app{grid-template-columns:1.5fr 1fr;align-items:start}.monitors{grid-template-columns:1fr 1fr}.monitors .xbar,#msg{grid-column:1/-1}
  .dtabs{grid-column:2}.docks{grid-column:2}.app>.monitors{grid-row:1/3}.dbody{max-height:46vh}}
 @media(min-width:1100px){
  .monitors{grid-template-columns:1fr 1fr}.monitors .xbar,#msg{grid-column:1/-1}
- .dtabs{display:none}.docks{grid-template-columns:repeat(4,1fr)}.dock{display:block}}
+ .dtabs{display:none}.docks{grid-template-columns:repeat(auto-fit,minmax(230px,1fr))}.dock{display:block}}
 body.nostudio #pvMon{display:none}body.nostudio .monitors{grid-template-columns:1fr}
 </style></head><body>
 <header class="top">
  <div class="brand"><i></i>Forge Studio</div>
- <div class="pills"><span class="pill live" id="pLive" hidden>LIVE <span id="tLive">00:00</span></span><span class="pill live" id="pRec" hidden>REC <span id="tRec">00:00</span></span><span class="pill" id="pFps">0 fps</span><span class="pill" id="pBit">0 kb/s</span><span class="pill bad" id="pNet" hidden>Network slow</span></div>
- <div class="acts"><button id="install" hidden>Install app</button><button id="rec"><span data-ic="rec"></span>Record</button><button id="liveBtn" class="live"><span data-ic="signal"></span><span id="liveTxt">Go live</span></button></div>
+ <div class="pills"><span class="pill live" id="pLive" hidden>LIVE <span id="tLive">00:00</span></span><span class="pill live" id="pRec" hidden>REC <span id="tRec">00:00</span></span><span class="pill live" id="pAud" hidden>AUDIO <span id="tAud">00:00</span></span><span class="pill" id="pFps">0 fps</span><span class="pill" id="pBit">0 kb/s</span><span class="pill bad" id="pNet" hidden>Network slow</span></div>
+ <div class="acts"><button id="install" hidden>Install app</button><button id="recA" aria-label="Record audio only as MP3"><span data-ic="mic"></span>Audio</button><button id="rec"><span data-ic="rec"></span>Record</button><button id="liveBtn" class="live"><span data-ic="signal"></span><span id="liveTxt">Go live</span></button></div>
 </header>
 <div class="app">
  <section class="monitors">
@@ -85,23 +85,37 @@ body.nostudio #pvMon{display:none}body.nostudio .monitors{grid-template-columns:
    <label><input type="checkbox" id="studioMode" checked> Studio mode</label></div>
   <p id="msg" role="status"></p>
  </section>
- <nav class="dtabs" id="dtabs"><button data-d="scenes" aria-pressed="true">Scenes</button><button data-d="sources" aria-pressed="false">Sources</button><button data-d="audio" aria-pressed="false">Audio</button><button data-d="stream" aria-pressed="false">Stream</button></nav>
+ <nav class="dtabs" id="dtabs"><button data-d="scenes" aria-pressed="true">Scenes</button><button data-d="sources" aria-pressed="false">Sources</button><button data-d="audio" aria-pressed="false">Audio</button><button data-d="stream" aria-pressed="false">Stream</button><button data-d="settings" aria-pressed="false">Quality</button></nav>
  <section class="docks">
   <div class="dock active" data-d="scenes"><div class="dh"><b>Scenes</b><button id="sAdd" aria-label="Add scene" data-ic="plus"></button><button id="sDup" aria-label="Duplicate scene" data-ic="copy"></button><button id="sRen" aria-label="Rename scene" data-ic="pencil"></button><button id="sDel" aria-label="Delete scene" data-ic="trash"></button></div><div class="dbody" id="scenesList"></div></div>
   <div class="dock" data-d="sources"><div class="dh"><b>Sources</b><button id="xAdd" aria-label="Add source" data-ic="plus"></button><button id="xUp" aria-label="Move up" data-ic="up"></button><button id="xDown" aria-label="Move down" data-ic="down"></button><button id="xDel" aria-label="Remove source" data-ic="trash"></button></div>
    <div class="dbody"><div class="menu" id="addMenu" hidden>
-    <div class="opts"><select id="face" aria-label="Camera"><option value="user">Front camera</option><option value="environment">Back camera</option></select><select id="res" aria-label="Resolution"><option value="720">720p</option><option value="1080">1080p</option></select></div>
+    <div class="opts"><select id="face" aria-label="Camera"><option value="user">Front camera</option><option value="environment">Back camera</option></select></div>
     <button id="addCam"><span data-ic="cam"></span>Device camera</button><button id="addPhone"><span data-ic="phone"></span>Phone camera (QR)</button><button id="addScr"><span data-ic="screen"></span>Screen capture</button><button id="addImg"><span data-ic="image"></span>Image</button><button id="addTxt"><span data-ic="text"></span>Text</button></div>
     <div id="srcList"></div></div></div>
   <div class="dock" data-d="audio"><div class="dh"><b>Audio mixer</b></div><div class="dbody" id="mixer"></div></div>
   <div class="dock" data-d="stream"><div class="dh"><b>Stream and record</b><button id="addDest" aria-label="Add destination" data-ic="plus"></button></div><div class="dbody"><div id="dests" style="display:grid;gap:6px"></div>
+   <label class="chk"><input type="checkbox" id="aOnly" checked><span>Also save a separate MP3 when recording video.</span></label>
    <input type="password" id="key" placeholder="Server password (if set)" autocomplete="off">
    <p class="small">Stream to several platforms at once by adding destinations. Recordings save to this device.</p><div id="recs"></div></div></div>
+   <div class="dock" data-d="settings"><div class="dh"><b>Quality</b></div><div class="dbody">
+   <label class="fld">Video quality<select id="qSel"><option value="std">Standard: 720p, 30 fps</option><option value="high" selected>High: 1080p, 30 fps</option><option value="max">Max: 1080p, 60 fps</option></select></label>
+   <p class="small" id="qNote"></p>
+   <label class="chk"><input type="checkbox" id="bestCam" checked><span>Best camera quality. Uses the sharpest picture the camera offers, then scales it down for a cleaner result.</span></label>
+   <p class="small" style="margin-top:6px"><b>Picture enhancement</b></p>
+   <div id="enh"><label class="sl"><span>Sharp</span><input type="range" id="eSharp" min="0" max="100" value="0" aria-label="Sharpness"></label>
+   <label class="sl"><span>Light</span><input type="range" id="eBri" min="60" max="140" value="100" aria-label="Brightness"></label>
+   <label class="sl"><span>Contrast</span><input type="range" id="eCon" min="60" max="140" value="100" aria-label="Contrast"></label>
+   <label class="sl"><span>Color</span><input type="range" id="eSat" min="0" max="200" value="100" aria-label="Color"></label>
+   <button id="eReset">Reset enhancement</button></div>
+   <p class="small" id="eNote"></p></div></div>
  </section>
 </div>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><filter id="shp" color-interpolation-filters="sRGB"><feConvolveMatrix id="shk" order="3" kernelMatrix="0 0 0 0 1 0 0 0 0" preserveAlpha="true"/></filter></svg>
 <input type="file" id="file" accept="image/*" hidden>
 <dialog id="qrd"><p><b>Add a phone camera</b></p><div id="qrbox"></div><p>Scan with the other phone's camera.</p><div id="qrlink"></div><p><button id="qrc">Close</button></p></dialog>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/lamejs/1.2.1/lame.min.js"></script>
 <script>
 const $=i=>document.getElementById(i),WS=location.origin.replace(/^http/,'ws');
 const P={plus:'M12 5v14M5 12h14',trash:'M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14M10 11v6M14 11v6',eye:'M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12zM12 9a3 3 0 100 6 3 3 0 000-6z',eyeoff:'M3 3l18 18M10.6 6.2A9.6 9.6 0 0112 6c6 0 10 6 10 6a17 17 0 01-3.2 3.8M6.5 6.6A17 17 0 002 12s4 7 10 7c1.7 0 3.2-.4 4.5-1M9.9 9.9a3 3 0 004.2 4.2',pencil:'M4 20h4L19 9l-4-4L4 16v4zM13.5 6.5l4 4',copy:'M9 9h11v11H9zM5 15V4h11',up:'M12 19V5M6 11l6-6 6 6',down:'M12 5v14M6 13l6 6 6-6',cam:'M3 7h4l2-2h6l2 2h4v12H3zM12 10a3.5 3.5 0 100 7 3.5 3.5 0 000-7z',phone:'M8 2h8a1 1 0 011 1v18a1 1 0 01-1 1H8a1 1 0 01-1-1V3a1 1 0 011-1zM11 18h2',screen:'M3 4h18v12H3zM8 20h8M12 16v4',image:'M3 4h18v16H3zM3 16l5-5 4 4 3-3 6 6',text:'M5 6V4h14v2M12 4v16M9 20h6',mic:'M12 3a3 3 0 013 3v6a3 3 0 01-6 0V6a3 3 0 013-3zM6 11a6 6 0 0012 0M12 17v4',micoff:'M3 3l18 18M9 9v3a3 3 0 005 2M15 10V6a3 3 0 00-5.5-1.7M6 11a6 6 0 009 5M12 17v4',expand:'M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5',arrow:'M5 12h14M13 6l6 6-6 6',rec:'M12 6a6 6 0 100 12 6 6 0 000-12z',signal:'M5 12a10 10 0 0114 0M8 15a6 6 0 018 0M12 19h.01'};
@@ -111,8 +125,9 @@ const PRESETS={Twitch:'rtmp://live.twitch.tv/app',YouTube:'rtmp://a.rtmp.youtube
 const LAY={full:[0,0,1,1],'pip-br':[.66,.62,.32,.34],'pip-bl':[.02,.62,.32,.34],'pip-tr':[.66,.04,.32,.34],'pip-tl':[.02,.04,.32,.34],left:[0,0,.5,1],right:[.5,0,.5,1],top:[0,0,1,.5],bottom:[0,.5,1,.5]};
 const LAYN={full:'Full screen','pip-br':'Corner bottom right','pip-bl':'Corner bottom left','pip-tr':'Corner top right','pip-tl':'Corner top left',left:'Left half',right:'Right half',top:'Top half',bottom:'Bottom half'};
 const KIND={cam:'cam',phone:'phone',screen:'screen',img:'image',text:'text'};
-let sources=[],scenes=[{name:'Scene 1',map:{}}],pre=scenes[0],prog=scenes[0],sel=null,uid=1,studio=true,tr=null,sceneN=1;
+let sources=[],scenes=[{name:'Scene 1',map:{}}],pre=scenes[0],prog=snap(scenes[0]),sel=null,uid=1,studio=true,tr=null,sceneN=1;
 const msg=t=>$('msg').textContent=t||'';
+function snap(sc){return{src:sc,name:sc.name,map:JSON.parse(JSON.stringify(sc.map))}}
 let ICE=[{urls:'stun:stun.l.google.com:19302'}];fetch('/ice').then(r=>r.json()).then(j=>{if(j.length)ICE=j}).catch(()=>{});
 
 // ---------- Audio
@@ -159,11 +174,11 @@ const item=(sc,s)=>sc.map[s.id];
 function addSource(s){
   s.id=uid++;sources.push(s);
   const used=Object.values(pre.map).some(i=>i.vis);
-  pre.map[s.id]={lay:used?'pip-br':'full',fit:'fill',vis:true};sel=s;renderAll();return s;
+  pre.map[s.id]={lay:used?'pip-br':'full',fit:'fill',vis:true};sel=s;renderAll();if(studio)msg('Added to Preview. Press Take to send it to Program.');return s;
 }
 function removeSource(s){
   if(!s)return;if(s.stream)s.stream.getTracks().forEach(t=>t.stop());if(s.peer)s.peer.close();dropChan(s.ch);
-  sources=sources.filter(q=>q!==s);scenes.forEach(sc=>delete sc.map[s.id]);if(sel===s)sel=sources[sources.length-1]||null;renderAll();
+  sources=sources.filter(q=>q!==s);scenes.forEach(sc=>delete sc.map[s.id]);delete prog.map[s.id];if(sel===s)sel=sources[sources.length-1]||null;renderAll();
 }
 function renderScenes(){
   const box=$('scenesList');box.innerHTML='';
@@ -171,7 +186,7 @@ function renderScenes(){
     const r=document.createElement('div');r.className='row'+(sc===pre?' sel':'');
     const n=document.createElement('span');n.className='nm';n.textContent=sc.name;n.onclick=()=>selectScene(sc);
     r.append(n);
-    if(sc===prog){const t=document.createElement('span');t.className='tag p';t.textContent='PGM';r.append(t)}
+    if(sc===prog.src){const t=document.createElement('span');t.className='tag p';t.textContent='PGM';r.append(t)}
     if(sc===pre&&studio){const t=document.createElement('span');t.className='tag v';t.textContent='PRV';r.append(t)}
     box.append(r);
   });
@@ -205,13 +220,12 @@ function renderSources(){
 function renderAll(){renderScenes();renderSources();$('empty').hidden=sources.length>0;$('onair').hidden=!(live||rec)}
 function selectScene(sc){pre=sc;if(!studio)take();renderAll()}
 function take(){
-  if(pre===prog){renderAll();return}
-  const ms=+$('tMs').value||500;
+  msg();const ms=+$('tMs').value||500;
   if($('tType').value==='fade')tr={from:prog,t0:performance.now(),ms};
-  prog=pre;renderAll();
+  prog=snap(pre);renderAll();
 }
 $('take').onclick=take;
-$('studioMode').onchange=e=>{studio=e.target.checked;document.body.classList.toggle('nostudio',!studio);$('take').disabled=!studio;if(!studio){pre=prog}renderAll()};
+$('studioMode').onchange=e=>{studio=e.target.checked;document.body.classList.toggle('nostudio',!studio);$('take').disabled=!studio;if(!studio){pre=prog.src}else{prog.map=JSON.parse(JSON.stringify(prog.map))}renderAll()};
 $('sAdd').onclick=()=>{scenes.push({name:'Scene '+(++sceneN),map:{}});selectScene(scenes[scenes.length-1])};
 $('sDup').onclick=()=>{scenes.push({name:pre.name+' copy',map:JSON.parse(JSON.stringify(pre.map))});selectScene(scenes[scenes.length-1])};
 $('sRen').onclick=()=>{const t=prompt('Scene name',pre.name);if(t){pre.name=t;renderScenes()}};
@@ -219,7 +233,7 @@ $('sDel').onclick=()=>{
   if(scenes.length<2)return msg('You need at least one scene.');
   if(!confirm('Delete "'+pre.name+'"?'))return;
   const i=scenes.indexOf(pre);scenes.splice(i,1);const nx=scenes[Math.max(0,i-1)];
-  if(prog===pre){prog=nx;tr=null}pre=nx;renderAll();
+  if(prog.src===pre){prog=snap(nx);tr=null}pre=nx;renderAll();
 };
 $('xAdd').onclick=()=>{$('addMenu').hidden=!$('addMenu').hidden};
 $('xDel').onclick=()=>removeSource(sel);
@@ -231,8 +245,8 @@ document.querySelectorAll('#dtabs button').forEach(b=>b.onclick=()=>{
 });
 const vid=st=>{const v=document.createElement('video');v.muted=true;v.playsInline=true;v.autoplay=true;if(st)v.srcObject=st;v.play().catch(()=>{});return v};
 async function addDeviceCam(){
-  msg();const h=+$('res').value;
-  try{const st=await navigator.mediaDevices.getUserMedia({video:{facingMode:$('face').value,width:{ideal:h*16/9},height:{ideal:h}},audio:false});
+  msg();
+  try{const st=await navigator.mediaDevices.getUserMedia({video:{facingMode:$('face').value,...camC()},audio:false});
     addSource({name:'This device camera',kind:'cam',el:vid(st),stream:st});$('addMenu').hidden=true}
   catch{msg('Camera blocked or not found. Allow camera access in your browser settings.')}
 }
@@ -260,7 +274,7 @@ function connectSig(){
         if(ev.track.kind==='audio')s.ch=addChan(s.name,ev.track,null)};
       pc.onicecandidate=ev=>ev.candidate&&tx({type:'ice',data:ev.candidate});
       pc.ready=pc.setRemoteDescription(o.data);await pc.ready;
-      const a=await pc.createAnswer();await pc.setLocalDescription(a);tx({type:'answer',data:a});
+      const a=await pc.createAnswer();await pc.setLocalDescription(a);tx({type:'answer',data:a});pushQuality();
     }else if(o.type==='ice'){const pc=peers[o.from];if(pc){await pc.ready;pc.addIceCandidate(o.data).catch(()=>{})}}
     else if(o.type==='left'){const s=phones[o.from];if(s){s.name='Phone '+o.from+' (offline)';dropChan(s.ch);s.ch=null}delete peers[o.from];renderSources()}
   };
@@ -274,15 +288,31 @@ $('qrc').onclick=()=>$('qrd').close();
 
 // ---------- Compositor
 function drawScene(c,sc,keep){
-  const W=1280,H=720;if(!keep){c.fillStyle='#000';c.fillRect(0,0,W,H)}
+  const W=c.canvas.width,H=c.canvas.height;c.imageSmoothingEnabled=true;c.imageSmoothingQuality='high';if(!keep){c.fillStyle='#000';c.fillRect(0,0,W,H)}
   sources.forEach(s=>{
     const it=sc.map[s.id];if(!it||!it.vis)return;const L=it.rect||LAY[it.lay]||LAY.full,x=L[0]*W,y=L[1]*H,w=L[2]*W,h=L[3]*H;
     if(s.kind==='text'){c.fillStyle='rgba(0,0,0,.55)';c.fillRect(x,y+h*.78,w,h*.16);c.fillStyle='#fff';c.font='bold '+Math.round(h*.09)+'px system-ui,sans-serif';c.textAlign='center';c.textBaseline='middle';c.fillText(s.text,x+w/2,y+h*.86,w*.95);return}
     const v=s.el instanceof HTMLVideoElement,sw=v?s.el.videoWidth:s.el.naturalWidth,sh=v?s.el.videoHeight:s.el.naturalHeight;if(!sw||!sh)return;
+    c.filter=EF;
     if(it.fit==='fit'){const k=Math.min(w/sw,h/sh),dw=sw*k,dh=sh*k;c.drawImage(s.el,x+(w-dw)/2,y+(h-dh)/2,dw,dh)}
     else{const k=Math.max(w/sw,h/sh),cw=w/k,ch=h/k;c.drawImage(s.el,(sw-cw)/2,(sh-ch)/2,cw,ch,x,y,w,h)}
+    c.filter='none';
   });
 }
+const QP={std:{w:1280,h:720,fps:30,bps:4e6,t:'Good for most streams and slower uploads.'},high:{w:1920,h:1080,fps:30,bps:6e6,t:'Sharp 1080p. Needs about 8 Mbps of upload speed.'},max:{w:1920,h:1080,fps:60,bps:9e6,t:'Smoothest and sharpest. Needs about 12 Mbps upload. Twitch caps near 6 to 8 Mbps, so use High there.'}};
+let qk='high',EF='none';const E={sharp:0,bri:100,con:100,sat:100},canF='filter' in CanvasRenderingContext2D.prototype;
+const camC=()=>{const p=QP[qk],best=$('bestCam').checked;return{width:{ideal:best?3840:p.w},height:{ideal:best?2160:p.h},frameRate:{ideal:p.fps}}};
+function pushQuality(){const p=QP[qk];if(sig&&sig.readyState===1)Object.keys(phones).forEach(id=>sig.send(JSON.stringify({to:id,type:'quality',data:{w:p.w,h:p.h,fps:p.fps,bps:Math.min(p.bps,8e6)}})))}
+function setQ(k){qk=k;const p=QP[k];$('pg').width=p.w;$('pg').height=p.h;$('qNote').textContent=p.t;pushQuality()}
+$('qSel').onchange=e=>setQ(e.target.value);
+function setEnh(){
+  const a=E.sharp/100*.9;$('shk').setAttribute('kernelMatrix',`0 ${-a} 0 ${-a} ${1+4*a} ${-a} 0 ${-a} 0`);
+  const f=[];if(E.sharp>0)f.push('url(#shp)');if(E.bri!==100)f.push(`brightness(${E.bri}%)`);if(E.con!==100)f.push(`contrast(${E.con}%)`);if(E.sat!==100)f.push(`saturate(${E.sat}%)`);
+  EF=canF&&f.length?f.join(' '):'none';
+}
+[['eSharp','sharp'],['eBri','bri'],['eCon','con'],['eSat','sat']].forEach(([id,k])=>$(id).oninput=e=>{E[k]=+e.target.value;setEnh()});
+$('eReset').onclick=()=>{E.sharp=0;E.bri=E.con=E.sat=100;[['eSharp',0],['eBri',100],['eCon',100],['eSat',100]].forEach(([i,v])=>$(i).value=v);setEnh()};
+if(!canF){$('enh').hidden=true;$('eNote').textContent='Picture enhancement needs Chrome. It is not available in this browser.'}else $('eNote').textContent='Sharpening uses more battery. Turn it up gently.';
 const rectOf=it=>it.rect||LAY[it.lay]||LAY.full;
 let drag=null;const pvEl=$('pv');
 const norm=e=>{const b=pvEl.getBoundingClientRect();return[(e.clientX-b.left)/b.width,(e.clientY-b.top)/b.height]};
@@ -305,63 +335,99 @@ function drawSel(){
 }
 const pvc=$('pv').getContext('2d'),pgc=$('pg').getContext('2d');let frames=0,lastF=performance.now();
 function loop(now){
+  if(!studio)prog.map=prog.src.map;
   if(studio){drawScene(pvc,pre);drawSel()}
   if(tr){const p=Math.min(1,(now-tr.t0)/tr.ms);drawScene(pgc,tr.from);pgc.globalAlpha=p;drawScene(pgc,prog,true);pgc.globalAlpha=1;if(p>=1)tr=null}else drawScene(pgc,prog);
   frames++;if(now-lastF>=1000){$('pFps').textContent=Math.round(frames*1000/(now-lastF))+' fps';frames=0;lastF=now}
   meters();requestAnimationFrame(loop);
 }
-requestAnimationFrame(loop);renderAll();renderAudio();
+setQ('high');requestAnimationFrame(loop);renderAll();renderAudio();
 if('serviceWorker' in navigator)navigator.serviceWorker.register('/sw.js').catch(()=>{});
 let ip=null;window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();ip=e;$('install').hidden=false});
 $('install').onclick=async()=>{if(ip){ip.prompt();await ip.userChoice;ip=null;$('install').hidden=true}};
 
 // ---------- Record and stream
 let wl=null;const wake=async on=>{try{if(on&&navigator.wakeLock)wl=await navigator.wakeLock.request('screen');else if(wl){wl.release();wl=null}}catch{}};
-async function makeRecorder(mime){
-  const out=$('pg').captureStream(30);mixer();out.addTrack(adest.stream.getAudioTracks()[0].clone());
-  return new MediaRecorder(out,{mimeType:mime||undefined,videoBitsPerSecond:5e6});
+function makeRecorder(mime){
+  const out=$('pg').captureStream(QP[qk].fps);mixer();out.addTrack(adest.stream.getAudioTracks()[0].clone());
+  return new MediaRecorder(out,{mimeType:mime||undefined,videoBitsPerSecond:QP[qk].bps});
 }
 const fmt=ms=>{const s=Math.floor(ms/1000);return String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0')};
 let rec=null,recT0=0,live=null,liveT0=0,bytes=0,lastB=0;
 setInterval(()=>{
-  if(rec)$('tRec').textContent=fmt(Date.now()-recT0);
+  if(rec)$('tRec').textContent=fmt(Date.now()-recT0);if(aoRec)$('tAud').textContent=fmt(Date.now()-aoT0);
   if(live){$('tLive').textContent=fmt(Date.now()-liveT0);$('pBit').textContent=Math.round((bytes-lastB)*8/1000)+' kb/s';lastB=bytes;$('pNet').hidden=!(live.ws.bufferedAmount>1.5e6)}
 },1000);
-function flags(){$('pRec').hidden=!rec;$('pLive').hidden=!live;$('rec').className=rec?'on':'';$('liveTxt').textContent=live?'Stop stream':'Go live';$('onair').hidden=!(live||rec);if(!live){$('pBit').textContent='0 kb/s';$('pNet').hidden=true}wake(!!(rec||live))}
-$('rec').onclick=async()=>{
-  if(rec){rec.stop();return}
+function flags(){$('pRec').hidden=!rec;$('pAud').hidden=!aoRec;$('recA').className=aoRec?'on':'';$('pLive').hidden=!live;$('rec').className=rec?'on':'';$('liveTxt').textContent=live?'Stop stream':'Go live';$('onair').hidden=!(live||rec);$('qSel').disabled=!!(rec||live);if(!live){$('pBit').textContent='0 kb/s';$('pNet').hidden=true}wake(!!(rec||live||aoRec))}
+let micAsked=false;const ensureMic=()=>{if(!mic&&!micAsked){micAsked=true;enableMic()}};
+async function toMp3(blob){
+  if(!window.lamejs)throw 0;
+  const buf=await mixer().decodeAudioData(await blob.arrayBuffer()),n=buf.length,d0=buf.getChannelData(0),d1=buf.numberOfChannels>1?buf.getChannelData(1):d0,pcm=new Int16Array(n);
+  for(let i=0;i<n;i++)pcm[i]=Math.max(-1,Math.min(1,(d0[i]+d1[i])/2))*32767;
+  const enc=new lamejs.Mp3Encoder(1,buf.sampleRate,128),out=[],bs=1152;
+  for(let i=0;i<n;i+=bs){const c=enc.encodeBuffer(pcm.subarray(i,i+bs));if(c.length)out.push(new Uint8Array(c));if(i%(bs*400)===0){msg('Converting to MP3: '+Math.round(i/n*100)+'%');await new Promise(r=>setTimeout(r))}}
+  const f=enc.flush();if(f.length)out.push(new Uint8Array(f));msg('');
+  return new Blob(out,{type:'audio/mpeg'});
+}
+async function saveLink(chunks,type,base){
+  const a=document.createElement('a'),au=type.startsWith('audio');let blob=new Blob(chunks,{type}),ext=type.includes('mp4')?(au?'m4a':'mp4'):'webm';
+  if(au){try{blob=await toMp3(blob);ext='mp3'}catch{msg('Could not make an MP3, so the original audio was saved instead.')}}
+  a.href=URL.createObjectURL(blob);a.download=base+'.'+ext;a.textContent='Save '+a.download;a.className='row';$('recs').prepend(a);
+}
+let aoRec=null,aoT0=0;
+$('recA').onclick=()=>{
+  if(aoRec){aoRec.stop();return}
   if(!window.MediaRecorder)return msg('Recording is not supported in this browser.');
-  const mime=['video/mp4;codecs=avc1','video/mp4','video/webm;codecs=vp9,opus','video/webm'].find(m=>MediaRecorder.isTypeSupported(m)),chunks=[];
-  rec=await makeRecorder(mime);rec.ondataavailable=e=>e.data.size&&chunks.push(e.data);
-  rec.onstop=()=>{const type=rec.mimeType||'video/webm',ext=type.includes('mp4')?'mp4':'webm',url=URL.createObjectURL(new Blob(chunks,{type})),name='forge-'+new Date().toISOString().slice(0,19).replace(/[:T]/g,'-')+'.'+ext;
-    const a=document.createElement('a');a.href=url;a.download=name;a.textContent='Save '+name;a.className='row';$('recs').prepend(a);rec=null;flags()};
-  rec.start(1000);recT0=Date.now();flags();
+  mixer();ensureMic();const am=['audio/webm;codecs=opus','audio/mp4','audio/webm'].find(m=>MediaRecorder.isTypeSupported(m)),ch=[],st=new Date().toISOString().slice(0,19).replace(/[:T]/g,'-');
+  const rc=new MediaRecorder(new MediaStream([adest.stream.getAudioTracks()[0].clone()]),am?{mimeType:am}:{});
+  rc.ondataavailable=e=>e.data.size&&ch.push(e.data);
+  rc.onstop=()=>{const t=rc.mimeType||'audio/webm';aoRec=null;flags();saveLink(ch,t,'forge-audio-'+st)};
+  rc.start(1000);aoRec=rc;aoT0=Date.now();flags();
 };
-function addDest(){
+let recA=null;
+$('rec').onclick=()=>{
+  if(rec){rec.stop();if(recA&&recA.state!=='inactive')recA.stop();return}
+  if(!window.MediaRecorder)return msg('Recording is not supported in this browser.');
+  const mime=['video/mp4;codecs=avc1','video/mp4','video/webm;codecs=vp9,opus','video/webm'].find(m=>MediaRecorder.isTypeSupported(m)),chunks=[],stamp=new Date().toISOString().slice(0,19).replace(/[:T]/g,'-');
+  mixer();ensureMic();
+  rec=makeRecorder(mime);rec.ondataavailable=e=>e.data.size&&chunks.push(e.data);
+  rec.onstop=()=>{saveLink(chunks,rec.mimeType||'video/webm','forge-video-'+stamp);rec=null;flags()};
+  rec.start(1000);recT0=Date.now();
+  if($('aOnly').checked){const am=['audio/mp4','audio/webm;codecs=opus','audio/webm'].find(m=>MediaRecorder.isTypeSupported(m)),ach=[];
+    recA=new MediaRecorder(new MediaStream([adest.stream.getAudioTracks()[0].clone()]),am?{mimeType:am}:{});
+    recA.ondataavailable=e=>e.data.size&&ach.push(e.data);recA.onstop=()=>saveLink(ach,recA.mimeType||'audio/webm','forge-audio-'+stamp);recA.start(1000)}
+  flags();
+};
+function addDest(init){
   const d=document.createElement('div');d.className='dest';
   const p=document.createElement('select');p.setAttribute('aria-label','Platform');Object.keys(PRESETS).forEach(k=>p.add(new Option(k)));
-  const x=document.createElement('button');x.className='ic';x.setAttribute('aria-label','Remove destination');x.innerHTML=ic('trash');x.onclick=()=>d.remove();
+  const x=document.createElement('button');x.className='ic';x.setAttribute('aria-label','Remove destination');x.innerHTML=ic('trash');x.onclick=()=>{d.remove();saveDests()};
   const k=document.createElement('input');k.className='k full';k.type='password';k.placeholder='Stream key';k.autocomplete='off';
   const u=document.createElement('input');u.className='u full';u.type='text';u.value=PRESETS.Twitch;u.hidden=true;u.setAttribute('aria-label','Server URL');
-  p.onchange=()=>{u.value=PRESETS[p.value];u.hidden=p.value!=='Custom'};
+  if(init){p.value=init.p;u.value=init.u;k.value=init.k;u.hidden=p.value!=='Custom'}
+  p.onchange=()=>{u.value=PRESETS[p.value];u.hidden=p.value!=='Custom';saveDests()};k.oninput=u.oninput=saveDests;
   d.append(p,x,k,u);$('dests').append(d);
 }
-addDest();$('addDest').onclick=addDest;
+const LS={get:k=>{try{return localStorage.getItem(k)}catch{return null}},set:(k,v)=>{try{localStorage.setItem(k,v)}catch{}}};
+function saveDests(){LS.set('forgeDests',JSON.stringify([...document.querySelectorAll('.dest')].map(d=>({p:d.querySelector('select').value,u:d.querySelector('.u').value,k:d.querySelector('.k').value}))));LS.set('forgeKey',$('key').value)}
+let saved=[];try{saved=JSON.parse(LS.get('forgeDests')||'[]')}catch{}
+if(saved.length)saved.forEach(addDest);else addDest();
+$('key').value=LS.get('forgeKey')||'';$('key').oninput=saveDests;$('addDest').onclick=()=>{addDest();saveDests()};
 $('liveBtn').onclick=()=>{
   if(live){live.r.stop();live.ws.close();return}
   const dests=[...document.querySelectorAll('.dest')].map(d=>{const u=d.querySelector('.u').value.trim().replace(/\/$/,''),k=d.querySelector('.k').value.trim();return u&&k?u+'/'+k:''}).filter(Boolean);
-  if(!dests.length){document.querySelector('#dtabs [data-d=stream]').click();return msg('Add a stream key in the Stream panel first.')}
+  if(!dests.length){document.querySelector('#dtabs [data-d=stream]').click();return msg('Add your stream key in the Stream tab first. It is saved on this device, so next time Go live starts at once.')}
   const mime='video/webm;codecs=h264,opus';
   if(!window.MediaRecorder||!MediaRecorder.isTypeSupported(mime))return msg('Going live needs Chrome on desktop or Android. Safari cannot send the H.264 stream.');
+  msg();mixer();ensureMic();
   const ws=new WebSocket(WS+'/out');ws.binaryType='arraybuffer';
-  ws.onopen=async()=>{
-    ws.send(JSON.stringify({dests,key:$('key').value}));
-    const r=await makeRecorder(mime);let q=Promise.resolve();
-    r.ondataavailable=e=>{if(e.data.size)q=q.then(()=>e.data.arrayBuffer()).then(b=>{bytes+=b.byteLength;if(ws.readyState===1)ws.send(b)})};
-    r.start(500);live={ws,r};liveT0=Date.now();bytes=lastB=0;flags();
-  };
+  const r=makeRecorder(mime),pend=[];let q=Promise.resolve();
+  live={ws,r};liveT0=Date.now();bytes=lastB=0;
+  ws.onopen=()=>ws.send(JSON.stringify({dests,key:$('key').value}));
+  r.ondataavailable=e=>{if(!e.data.size)return;q=q.then(()=>e.data.arrayBuffer()).then(b=>{bytes+=b.byteLength;if(ws.readyState===1){while(pend.length)ws.send(pend.shift());ws.send(b)}else if(ws.readyState===0&&pend.length<60)pend.push(b)})};
   ws.onmessage=e=>{const o=JSON.parse(e.data);if(o.log)msg(o.log.slice(0,240))};
   ws.onerror=()=>msg('Could not reach the server. Check your link and password.');
   ws.onclose=()=>{if(live&&live.r.state!=='inactive')live.r.stop();live=null;flags()};
+  r.start(500);flags();
 };
 </script></body></html>

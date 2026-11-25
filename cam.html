@@ -37,6 +37,10 @@ $('go').onclick=async()=>{
   ws.onmessage=async e=>{const o=JSON.parse(e.data);
     if(o.type==='answer')await pc.setRemoteDescription(o.data);
     else if(o.type==='ice')await pc.addIceCandidate(o.data);
+    else if(o.type==='quality'){const q=o.data,tk=stream&&stream.getVideoTracks()[0];
+      if(tk)tk.applyConstraints({width:{ideal:q.w},height:{ideal:q.h},frameRate:{ideal:q.fps}}).catch(()=>{});
+      const sn=pc.getSenders().find(x=>x.track&&x.track.kind==='video');
+      if(sn){const pr=sn.getParameters();if(!pr.encodings||!pr.encodings.length)pr.encodings=[{}];pr.encodings[0].maxBitrate=q.bps;pr.degradationPreference='maintain-resolution';sn.setParameters(pr).catch(()=>{})}}
     else if(o.type==='error'){$('st').textContent=o.text;$('go').disabled=false}};
   ws.onclose=()=>{if(pc.connectionState!=='connected')$('go').disabled=false};
 };
